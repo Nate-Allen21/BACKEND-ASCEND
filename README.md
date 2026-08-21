@@ -21,12 +21,12 @@ The backend provides the core application logic for authentication, player progr
 
 ## Local Database
 
-By default, the API uses an H2 file database so it can run immediately without requiring a separate database server.
+By default, the API uses an H2 file database path that works well in containers and in local development.
 
 Default settings:
 
 ```text
-Path base: backend/data/ascend-local
+Path base: /tmp/ascend-local
 Driver: org.h2.Driver
 User: sa
 Password: empty
@@ -34,7 +34,7 @@ Password: empty
 
 This local setup already includes:
 
-- `AUTO_SERVER=TRUE` to reduce lock conflicts between local processes
+- `AUTO_SERVER=FALSE` to avoid container-specific file locking issues
 - `LOCK_TIMEOUT=10000` to tolerate short access disputes
 
 If you want to override the database, set:
@@ -47,6 +47,8 @@ $env:ASCEND_DB_PASSWORD=""
 $env:ASCEND_DB_DIALECT="org.hibernate.dialect.H2Dialect"
 ```
 
+If you want persistent local storage inside Docker, you can point `ASCEND_DB_URL` to a writable folder of your choice and mount that folder into the container.
+
 Tables are created automatically by Hibernate on startup.
 
 ## Docker Compose
@@ -57,7 +59,7 @@ From the project root, start the stack with:
 docker compose up -d --build
 ```
 
-This starts the backend on port `8082` with the embedded H2 file database.
+This starts the backend on port `8082` with the embedded H2 database.
 
 To watch the backend logs:
 
