@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
 
@@ -34,6 +35,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildErrorResponse(exception.getMessage(), request, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            NoResourceFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildErrorResponse("Recurso nao encontrado.", request, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)
