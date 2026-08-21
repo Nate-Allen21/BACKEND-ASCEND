@@ -12,7 +12,7 @@ The backend provides the core application logic for authentication, player progr
 - Spring Boot 4
 - Spring Web MVC
 - Spring Data JPA
-- H2 for local development
+- PostgreSQL for local development and deploys
 - Gradle Wrapper
 
 ## Requirements
@@ -21,33 +21,33 @@ The backend provides the core application logic for authentication, player progr
 
 ## Local Database
 
-By default, the API uses an H2 file database path that works well in containers and in local development.
+By default, the API uses PostgreSQL. The easiest local setup is to run the provided Docker Compose stack, which starts both the database and the backend together.
 
 Default settings:
 
 ```text
-Path base: /tmp/ascend-local
-Driver: org.h2.Driver
-User: sa
-Password: empty
+URL: jdbc:postgresql://db:5432/ascend
+Driver: org.postgresql.Driver
+User: ascend
+Password: ascend
 ```
 
-This local setup already includes:
+This setup already includes:
 
-- `AUTO_SERVER=FALSE` to avoid container-specific file locking issues
-- `LOCK_TIMEOUT=10000` to tolerate short access disputes
+- a dedicated PostgreSQL container
+- a persistent Docker volume for the database files
 
 If you want to override the database, set:
 
 ```powershell
-$env:ASCEND_DB_URL="jdbc:h2:file:./data/ascend-local;MODE=MySQL;AUTO_SERVER=TRUE;LOCK_TIMEOUT=10000"
-$env:ASCEND_DB_DRIVER="org.h2.Driver"
-$env:ASCEND_DB_USER="sa"
-$env:ASCEND_DB_PASSWORD=""
-$env:ASCEND_DB_DIALECT="org.hibernate.dialect.H2Dialect"
+$env:ASCEND_DB_URL="jdbc:postgresql://localhost:5432/ascend"
+$env:ASCEND_DB_DRIVER="org.postgresql.Driver"
+$env:ASCEND_DB_USER="ascend"
+$env:ASCEND_DB_PASSWORD="ascend"
+$env:ASCEND_DB_DIALECT="org.hibernate.dialect.PostgreSQLDialect"
 ```
 
-If you want persistent local storage inside Docker, you can point `ASCEND_DB_URL` to a writable folder of your choice and mount that folder into the container.
+If you want to use a managed PostgreSQL instance in Render or Supabase, just point `ASCEND_DB_URL` and the credentials to that service.
 
 Tables are created automatically by Hibernate on startup.
 
@@ -59,7 +59,7 @@ From the project root, start the stack with:
 docker compose up -d --build
 ```
 
-This starts the backend on port `8080` with the embedded H2 database.
+This starts the backend and a PostgreSQL database on port `8080` and `5432`.
 
 To watch the backend logs:
 
@@ -105,7 +105,7 @@ On Windows:
 .\gradlew.bat test
 ```
 
-Tests use H2 in memory, so they stay fully self-contained.
+Tests use H2 in PostgreSQL compatibility mode, so they stay fully self-contained.
 
 ## Available Endpoints
 
