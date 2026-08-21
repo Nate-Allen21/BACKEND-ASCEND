@@ -59,7 +59,7 @@ From the project root, start the stack with:
 docker compose up -d --build
 ```
 
-This starts the backend on port `8082` with the embedded H2 database.
+This starts the backend on port `8080` with the embedded H2 database.
 
 To watch the backend logs:
 
@@ -88,10 +88,10 @@ On Windows:
 Default URL:
 
 ```text
-http://localhost:8082
+http://localhost:8080
 ```
 
-If port `8082` is unavailable, `start-backend.ps1` tries `8081` and then `8080`.
+If port `8080` is unavailable, `start-backend.ps1` tries `8081` and then `8082`.
 
 ## Running Tests
 
