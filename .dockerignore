@@ -1,5 +1,8 @@
-build
-.gradle
-data
-*.log
+target/
+build/
+.git/
+.idea/
 *.iml
+.env
+.vscode/
+*.log
