@@ -8,7 +8,7 @@ The backend provides the core application logic for authentication, player progr
 
 ## Stack
 
-- Java 20
+- Java 21
 - Spring Boot 4
 - Spring Web MVC
 - Spring Data JPA
@@ -17,7 +17,7 @@ The backend provides the core application logic for authentication, player progr
 
 ## Requirements
 
-- Java 20 or newer
+- Java 21 or newer
 
 ## Local Database
 

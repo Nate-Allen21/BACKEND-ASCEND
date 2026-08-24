@@ -70,14 +70,10 @@ goto fail
 
 :setJavaFromKnownLocations
 for %%d in (
-    "%USERPROFILE%\.jdks\ms-17.0.18"
-    "%USERPROFILE%\.jdks\openjdk-26"
     "%ProgramFiles%\Java\jdk-21"
-    "%ProgramFiles%\Java\jdk-20"
-    "%ProgramFiles%\Java\jdk-17"
     "%ProgramFiles%\Microsoft\jdk-21.0.0-hotspot"
-    "%ProgramFiles%\Microsoft\jdk-20.0.2-hotspot"
-    "%ProgramFiles%\Microsoft\jdk-17.0.10-hotspot"
+    "%USERPROFILE%\.jdks\openjdk-26"
+    "%USERPROFILE%\.jdks\ms-17.0.18"
 ) do (
     if exist "%%~d\bin\java.exe" (
         set "JAVA_HOME=%%~d"
