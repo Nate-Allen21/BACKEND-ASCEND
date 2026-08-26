@@ -81,7 +81,7 @@ public class AiAssistantService {
             return new AiChatResponse(
                     ASSISTANT_NAME,
                     "A IA externa foi configurada, mas a chave atual foi recusada pelo provedor. " +
-                            "Verifique se `ascend.ai.api-key` é uma chave valida e se `ascend.ai.base-url` aponta para o endpoint correto.\n\n" +
+                    "Verifique se `ascend.ai.api-key` é uma chave válida e se `ascend.ai.base-url` aponta para o endpoint correto.\n\n" +
                             "Enquanto isso, eu continuo disponível no modo local.",
                     List.of("Revisar chave", "Ver calendario", "Gerar plano")
             );
@@ -122,8 +122,8 @@ public class AiAssistantService {
                 ASSISTANT_NAME,
                 reply,
                 List.of(
-                        "Abrir calendÃ¡rio da semana",
-                        "Gerar prÃ³ximas missÃµes",
+                        "Abrir calendário da semana",
+                        "Gerar próximas missões",
                         "Ajustar foco do dia"
                 )
         );
@@ -139,15 +139,15 @@ public class AiAssistantService {
         builder.append("\"model\":\"").append(escapeJson(model)).append("\",");
         builder.append("\"messages\":[");
         appendMessage(builder, "system", """
-                VocÃª Ã© o ASCEND AI, um assistente de produtividade e rotina.
-                Responda em portuguÃªs do Brasil.
-                Seja prÃ¡tico, claro e orientado para aÃ§Ã£o.
-                Ajude com planejamento de rotina, estudo, treino, trabalho e calendÃ¡rio.
-                VocÃª tem acesso ao snapshot do sistema, aos eventos do dia, ao progresso recente e ao histÃ³rico resumido.
+                Você é o ASCEND AI, um assistente de produtividade e rotina.
+                Responda em português do Brasil.
+                Seja prático, claro e orientado para a ação.
+                Ajude com planejamento de rotina, estudo, treino, trabalho e calendário.
+                Você tem acesso ao snapshot do sistema, aos eventos do dia, ao progresso recente e ao histórico resumido.
                 Evite respostas longas demais.
                 """);
         builder.append(',');
-        appendMessage(builder, "system", "Contexto do usuÃ¡rio: " + user.getName() + ", rank " + user.getRank() + ", nÃ­vel " + user.getLevel() + ", streak " + user.getStreakDays() + ".");
+        appendMessage(builder, "system", "Contexto do usuário: " + user.getName() + ", rank " + user.getRank() + ", nível " + user.getLevel() + ", streak " + user.getStreakDays() + ".");
         builder.append(',');
         appendMessage(builder, "system", buildSystemSnapshot(user, profile));
         if (profile != null) {
@@ -172,7 +172,7 @@ public class AiAssistantService {
     private String buildResponsesPayload(User user, String message, List<AiChatMessage> conversation, RoutineProfileRequest profile) {
         StringBuilder input = new StringBuilder();
         input.append("Você é o ASCEND AI, um assistente de produtividade e rotina.\n");
-        input.append("Responda em português do Brasil e seja prático, claro e orientado para ação.\n");
+        input.append("Responda em português do Brasil e seja prático, claro e orientado para a ação.\n");
         input.append("Contexto do usuário: ").append(user.getName()).append(", rank ").append(user.getRank()).append(", nível ").append(user.getLevel()).append(", streak ").append(user.getStreakDays()).append(".\n");
         input.append(buildSystemSnapshot(user, profile));
         if (profile != null) {
