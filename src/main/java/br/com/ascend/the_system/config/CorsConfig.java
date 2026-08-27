@@ -17,10 +17,10 @@ public class CorsConfig {
     @Bean
     CorsFilter corsFilter() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("null"));
+        configuration.setAllowedOrigins(List.of());
 
         List<String> allowedOriginPatterns = new ArrayList<>(List.of(
-                "http://localhost:*",
+            "http://localhost:*",
                 "http://127.0.0.1:*",
                 "http://192.168.*:*",
                 "http://10.*:*",
@@ -41,6 +41,10 @@ public class CorsConfig {
                 "http://172.30.*:*",
                 "http://172.31.*:*"
         ));
+
+            // Allow the production frontend and Vercel preview deployments by default
+            allowedOriginPatterns.add("https://ascend22.vercel.app");
+            allowedOriginPatterns.add("https://ascend22-*.vercel.app");
 
         String customOrigins = System.getenv("ASCEND_CORS_ALLOWED_ORIGINS");
         if (customOrigins != null && !customOrigins.isBlank()) {
