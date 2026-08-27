@@ -82,8 +82,13 @@ ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=
 ASCEND_DB_USER=postgres.YOUR-PROJECT-REF
 ASCEND_DB_PASSWORD=YOUR-SUPABASE-DATABASE-PASSWORD
 ASCEND_CORS_ALLOWED_ORIGINS=https://YOUR-VERCEL-PROJECT.vercel.app,https://*.vercel.app
-OPENAI_API_KEY=YOUR-OPENAI-API-KEY
-ASCEND_AI_MODEL=gpt-4.1-mini
+ASCEND_AI_PROVIDER=llama
+ASCEND_AI_BASE_URL=https://api.llama.com/compat/v1
+ASCEND_AI_KEY=YOUR-LLAMA-API-KEY
+ASCEND_AI_API_KEY=YOUR-LLAMA-API-KEY
+LLAMA_API_KEY=YOUR-LLAMA-API-KEY
+ASCEND_AI_MODEL=Llama-3.3-8B-Instruct
+ASCEND_AI_RESPONSE_MODE=chat-completions
 ```
 
 Render provides `PORT` automatically, and the Dockerfile already starts the Spring Boot app with that port.
@@ -95,6 +100,24 @@ https://YOUR-RENDER-SERVICE.onrender.com/api/health
 ```
 
 It should return `status: UP`.
+
+## Llama AI
+
+The backend calls AI providers through an OpenAI-compatible chat completions request. For Llama API, configure Render with:
+
+```text
+ASCEND_AI_PROVIDER=llama
+ASCEND_AI_BASE_URL=https://api.llama.com/compat/v1
+ASCEND_AI_KEY=YOUR-LLAMA-API-KEY
+ASCEND_AI_API_KEY=YOUR-LLAMA-API-KEY
+LLAMA_API_KEY=YOUR-LLAMA-API-KEY
+ASCEND_AI_MODEL=Llama-3.3-8B-Instruct
+ASCEND_AI_RESPONSE_MODE=chat-completions
+```
+
+After creating your Llama account, create an API key in the Llama/Meta developer dashboard and copy the exact model id available in your account. If the dashboard shows a different current model, use that value in `ASCEND_AI_MODEL`.
+
+If no Llama key is configured, the app keeps working in local fallback mode.
 
 ## Docker Compose
 

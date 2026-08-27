@@ -81,7 +81,7 @@ public class AiAssistantService {
             return new AiChatResponse(
                     ASSISTANT_NAME,
                     "A IA externa foi configurada, mas a chave atual foi recusada pelo provedor. " +
-                    "Verifique se `ascend.ai.api-key` é uma chave válida e se `ascend.ai.base-url` aponta para o endpoint correto.\n\n" +
+                    "Verifique se `ASCEND_AI_KEY` é uma chave válida e se `ASCEND_AI_BASE_URL` aponta para o endpoint correto.\n\n" +
                             "Enquanto isso, eu continuo disponível no modo local.",
                     List.of("Revisar chave", "Ver calendario", "Gerar plano")
             );
@@ -303,7 +303,7 @@ public class AiAssistantService {
         if (focus == null || focus.isBlank()) {
             focus = "sua rotina atual";
         }
-        String reply = "Modo local ativo. Eu ainda posso te ajudar com base no seu perfil, mas para respostas de IA real configure `ascend.ai.api-key`.\n\n"
+        String reply = "Modo local ativo. Eu ainda posso te ajudar com base no seu perfil, mas para respostas de IA real configure `ASCEND_AI_KEY`.\n\n"
                 + "Com base no seu contexto, eu sugiro:\n"
                 + "1. Escolher uma prioridade para hoje.\n"
                 + "2. Fechar um bloco de foco de 25 a 45 minutos.\n"
@@ -420,11 +420,25 @@ public class AiAssistantService {
             return configuredApiKey.trim();
         }
 
+        String genericAscendAiApiKey = System.getenv("ASCEND_AI_API_KEY");
+        if (genericAscendAiApiKey != null && !genericAscendAiApiKey.isBlank()) {
+            return genericAscendAiApiKey.trim();
+        }
+
+        String genericAscendAiKey = System.getenv("ASCEND_AI_KEY");
+        if (genericAscendAiKey != null && !genericAscendAiKey.isBlank()) {
+            return genericAscendAiKey.trim();
+        }
+
         String normalizedProvider = normalizeProvider(provider);
-        String envVarName = isAzureOpenAi(normalizedProvider) ? "AZURE_OPENAI_API_KEY" : "OPENAI_API_KEY";
+        String envVarName = resolveProviderApiKeyEnvironmentVariable(normalizedProvider);
         String fromEnv = System.getenv(envVarName);
         if (fromEnv != null && !fromEnv.isBlank()) {
             return fromEnv.trim();
+        }
+
+        if (isLlama(normalizedProvider)) {
+            return "";
         }
 
         if (isAzureOpenAi(normalizedProvider)) {
@@ -463,6 +477,21 @@ public class AiAssistantService {
     private static boolean isAzureOpenAi(String provider) {
         String normalized = normalizeProvider(provider);
         return "azure-openai".equals(normalized) || "azure".equals(normalized);
+    }
+
+    private static boolean isLlama(String provider) {
+        String normalized = normalizeProvider(provider);
+        return "llama".equals(normalized) || "meta-llama".equals(normalized) || "meta".equals(normalized);
+    }
+
+    private static String resolveProviderApiKeyEnvironmentVariable(String provider) {
+        if (isAzureOpenAi(provider)) {
+            return "AZURE_OPENAI_API_KEY";
+        }
+        if (isLlama(provider)) {
+            return "LLAMA_API_KEY";
+        }
+        return "OPENAI_API_KEY";
     }
 
     private static final class UnauthorizedAiException extends RuntimeException {

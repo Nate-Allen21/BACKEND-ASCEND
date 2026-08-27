@@ -13,7 +13,17 @@ services:
         sync: false
       - key: ASCEND_CORS_ALLOWED_ORIGINS
         sync: false
-      - key: OPENAI_API_KEY
+      - key: ASCEND_AI_PROVIDER
+        value: llama
+      - key: ASCEND_AI_BASE_URL
+        value: https://api.llama.com/compat/v1
+      - key: ASCEND_AI_KEY
+        sync: false
+      - key: ASCEND_AI_API_KEY
+        sync: false
+      - key: LLAMA_API_KEY
         sync: false
       - key: ASCEND_AI_MODEL
-        value: gpt-4.1-mini
+        value: Llama-3.3-8B-Instruct
+      - key: ASCEND_AI_RESPONSE_MODE
+        value: chat-completions
