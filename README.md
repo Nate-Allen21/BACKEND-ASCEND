@@ -51,6 +51,51 @@ If you want to use a managed PostgreSQL instance in Render or Supabase, just poi
 
 Tables are created automatically by Hibernate on startup.
 
+## Supabase Database
+
+Create a Supabase project and copy the PostgreSQL connection details from **Project Settings > Database**.
+
+For Render, prefer the pooled connection string and set:
+
+```text
+ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=require
+ASCEND_DB_USER=postgres.YOUR-PROJECT-REF
+ASCEND_DB_PASSWORD=YOUR-SUPABASE-DATABASE-PASSWORD
+```
+
+Keep the `jdbc:postgresql://` prefix because this is a Spring Boot JDBC URL. Supabase provides PostgreSQL; the AI provider is configured separately with `OPENAI_API_KEY`.
+
+If you use the direct Supabase database host instead of the pooler, keep `?sslmode=require` and use the port shown by Supabase.
+
+## Render Deploy
+
+This repo includes `render.yaml` for a Docker web service.
+
+In Render:
+
+1. Create a new Blueprint or Web Service from this repository.
+2. Use the backend folder as the service root if Render asks for one.
+3. Add these environment variables:
+
+```text
+ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=require
+ASCEND_DB_USER=postgres.YOUR-PROJECT-REF
+ASCEND_DB_PASSWORD=YOUR-SUPABASE-DATABASE-PASSWORD
+ASCEND_CORS_ALLOWED_ORIGINS=https://YOUR-VERCEL-PROJECT.vercel.app,https://*.vercel.app
+OPENAI_API_KEY=YOUR-OPENAI-API-KEY
+ASCEND_AI_MODEL=gpt-4.1-mini
+```
+
+Render provides `PORT` automatically, and the Dockerfile already starts the Spring Boot app with that port.
+
+After deploy, check:
+
+```text
+https://YOUR-RENDER-SERVICE.onrender.com/api/health
+```
+
+It should return `status: UP`.
+
 ## Docker Compose
 
 From the project root, start the stack with:
