@@ -58,12 +58,14 @@ Create a Supabase project and copy the PostgreSQL connection details from **Proj
 For Render, prefer the pooled connection string and set:
 
 ```text
-ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=require
+ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=require&prepareThreshold=0
 ASCEND_DB_USER=postgres.YOUR-PROJECT-REF
 ASCEND_DB_PASSWORD=YOUR-SUPABASE-DATABASE-PASSWORD
 ```
 
 Keep the `jdbc:postgresql://` prefix because this is a Spring Boot JDBC URL. Supabase provides PostgreSQL; the AI provider is configured separately with `OPENAI_API_KEY`.
+
+Port `6543` uses transaction pooling and avoids exhausting the small session pool during a Render rolling deploy. `prepareThreshold=0` disables server-side prepared statements, which are not compatible with transaction pooling. The application also limits Hikari to three connections by default; override `ASCEND_DB_POOL_MAX_SIZE` only when the database plan supports it.
 
 If you use the direct Supabase database host instead of the pooler, keep `?sslmode=require` and use the port shown by Supabase.
 
@@ -78,7 +80,7 @@ In Render:
 3. Add these environment variables:
 
 ```text
-ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=require
+ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=require&prepareThreshold=0
 ASCEND_DB_USER=postgres.YOUR-PROJECT-REF
 ASCEND_DB_PASSWORD=YOUR-SUPABASE-DATABASE-PASSWORD
 ASCEND_CORS_ALLOWED_ORIGINS=https://YOUR-VERCEL-PROJECT.vercel.app,https://*.vercel.app
