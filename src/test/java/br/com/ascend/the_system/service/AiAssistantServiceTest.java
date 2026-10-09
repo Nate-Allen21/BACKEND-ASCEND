@@ -41,4 +41,37 @@ class AiAssistantServiceTest {
 
         assertEquals("configured-key", key);
     }
+
+    @Test
+    void shouldBuildGroqChatCompletionsEndpointFromBlankBaseUrl() {
+        String endpoint = AiAssistantService.resolveRequestEndpoint(
+                "",
+                "groq",
+                "chat-completions",
+                "",
+                ""
+        );
+
+        assertEquals("https://api.groq.com/openai/v1/chat/completions", endpoint);
+    }
+
+    @Test
+    void shouldBuildGroqEndpointFromConfiguredBaseUrl() {
+        String endpoint = AiAssistantService.resolveRequestEndpoint(
+                "https://api.groq.com/openai/v1/",
+                "groq",
+                "chat-completions",
+                "",
+                ""
+        );
+
+        assertEquals("https://api.groq.com/openai/v1/chat/completions", endpoint);
+    }
+
+    @Test
+    void shouldResolveProviderDefaultBaseUrl() {
+        assertEquals("https://api.groq.com/openai/v1", AiAssistantService.resolveDefaultBaseUrl("groq"));
+        assertEquals("https://api.groq.com/openai/v1", AiAssistantService.resolveDefaultBaseUrl("GROQ"));
+        assertEquals("https://api.openai.com/v1", AiAssistantService.resolveDefaultBaseUrl("openai"));
+    }
 }

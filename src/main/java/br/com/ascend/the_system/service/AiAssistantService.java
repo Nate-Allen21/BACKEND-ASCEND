@@ -29,10 +29,32 @@ import java.util.Locale;
 public class AiAssistantService {
 
     private static final String ASSISTANT_NAME = "ASCEND AI";
+    private static final long AI_WINDOW_MILLIS = 10 * 60 * 1000L;
+    private static final int AI_MESSAGES_PER_WINDOW = 12;
+    private final java.util.concurrent.ConcurrentHashMap<Long, RateWindow> limits = new java.util.concurrent.ConcurrentHashMap<>();
+    private record RateWindow(long started, int count) {}
+
+    private void limitExternalRequests(Long userId) {
+        long now = System.currentTimeMillis();
+        RateWindow window = limits.compute(userId, (id, old) -> {
+            if (old == null || now - old.started() >= AI_WINDOW_MILLIS) return new RateWindow(now, 1);
+            return new RateWindow(old.started(), old.count() + 1);
+        });
+        if (window.count() > AI_MESSAGES_PER_WINDOW) {
+            throw new br.com.ascend.the_system.exception.BadRequestException(
+                "Limite de mensagens atingido. Tente novamente dentro de alguns minutos.");
+        }
+        if (limits.size() > 2000) limits.entrySet().removeIf(e -> now - e.getValue().started() >= AI_WINDOW_MILLIS);
+    }
+
+    private static final List<String> GROQ_MODEL_FALLBACKS = List.of(
+            "openai/gpt-oss-20b",
+            "openai/gpt-oss-120b",
+            "meta-llama/llama-4-scout-17b-16e-instruct");
 
     private final HttpClient httpClient;
     private final String apiKey;
-    private final String model;
+    private volatile String model;
     private final String baseUrl;
     private final String provider;
     private final String responseMode;
@@ -47,18 +69,19 @@ public class AiAssistantService {
             UserQuestRepository userQuestRepository,
             VaultTransactionRepository vaultTransactionRepository,
             @Value("${ascend.ai.api-key:}") String apiKey,
-            @Value("${ascend.ai.model:gpt-4.1-mini}") String model,
-            @Value("${ascend.ai.base-url:https://api.openai.com/v1}") String baseUrl,
-            @Value("${ascend.ai.provider:openai}") String provider,
+            @Value("${ascend.ai.model:openai/gpt-oss-20b}") String model,
+            @Value("${ascend.ai.base-url:}") String baseUrl,
+            @Value("${ascend.ai.provider:groq}") String provider,
             @Value("${ascend.ai.response-mode:chat-completions}") String responseMode,
             @Value("${ascend.ai.api-version:}") String apiVersion,
             @Value("${ascend.ai.deployment:}") String deployment
     ) {
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
-        this.apiKey = resolveApiKey(apiKey, provider);
+        String normalizedProvider = normalizeProvider(provider);
+        this.apiKey = resolveApiKey(apiKey, normalizedProvider);
         this.model = model == null ? "" : model.trim();
-        this.baseUrl = normalizeBaseUrl(baseUrl);
-        this.provider = normalizeProvider(provider);
+        this.baseUrl = normalizeBaseUrl(baseUrl, normalizedProvider);
+        this.provider = normalizedProvider;
         this.responseMode = normalizeResponseMode(responseMode);
         this.apiVersion = apiVersion == null ? "" : apiVersion.trim();
         this.deployment = deployment == null ? "" : deployment.trim();
@@ -70,13 +93,27 @@ public class AiAssistantService {
     public AiChatResponse chat(User user, AiChatRequest request) {
         String message = request == null || request.message() == null ? "" : request.message().trim();
         RoutineProfileRequest profile = request == null ? null : request.profile();
+        if (message.isBlank()) {
+            throw new br.com.ascend.the_system.exception.BadRequestException("Escreva uma pergunta para a IA.");
+        }
+        if (message.length() > 2000) {
+            throw new br.com.ascend.the_system.exception.BadRequestException("Pergunta muito longa. Limite: 2.000 caracteres.");
+        }
 
         if (!hasApiKey()) {
             return fallbackChat(user, message, profile);
         }
+        if (request == null || !Boolean.TRUE.equals(request.externalConsent())) {
+            return new AiChatResponse(ASSISTANT_NAME,
+                "Antes de usar IA externa, autorize o envio dos dados necessários nas opções do chat. Sem autorização, nenhuma solicitação é enviada ao provedor externo.",
+                List.of("Autorizar IA externa", "Dúvidas sobre privacidade"));
+        }
+        limitExternalRequests(user.getId());
 
         try {
-            return callOpenAi(user, message, request == null ? List.of() : safeConversation(request.conversation()), profile);
+            return callOpenAi(user, message, request == null ? List.of() : safeConversation(request.conversation()).stream()
+                    .filter(m -> m != null && m.content() != null && m.content().length() <= 2000)
+                    .limit(10).toList(), profile);
         } catch (UnauthorizedAiException error) {
             return new AiChatResponse(
                     ASSISTANT_NAME,
@@ -113,6 +150,13 @@ public class AiAssistantService {
             throw new UnauthorizedAiException("AI provider rejected credentials: " + response.statusCode());
         }
         if (response.statusCode() >= 400) {
+            if (isGroq(provider) && isUnknownModelResponse(response)) {
+                String alternative = nextGroqModel();
+                if (alternative != null) {
+                    this.model = alternative;
+                    return callOpenAi(user, message, conversation, profile);
+                }
+            }
             throw new IllegalStateException("OpenAI request failed: " + response.statusCode());
         }
 
@@ -294,6 +338,23 @@ public class AiAssistantService {
         return conversation == null ? List.of() : conversation;
     }
 
+    private boolean isUnknownModelResponse(HttpResponse<String> response) {
+        String body = response.body() == null ? "" : response.body().toLowerCase(Locale.ROOT);
+        return body.contains("model_not_found")
+                || body.contains("does not exist")
+                || body.contains("decommissioned")
+                || body.contains("no longer supported");
+    }
+
+    private String nextGroqModel() {
+        int index = GROQ_MODEL_FALLBACKS.indexOf(model);
+        int next = index < 0 ? 0 : index + 1;
+        if (next >= GROQ_MODEL_FALLBACKS.size()) {
+            return null;
+        }
+        return GROQ_MODEL_FALLBACKS.get(next);
+    }
+
     private boolean hasApiKey() {
         return !apiKey.isBlank();
     }
@@ -393,7 +454,7 @@ public class AiAssistantService {
     static String resolveRequestEndpoint(String configuredBaseUrl, String provider, String responseMode, String apiVersion, String deployment) {
         String base = configuredBaseUrl == null ? "" : configuredBaseUrl.trim();
         if (base.isBlank()) {
-            base = "https://api.openai.com/v1";
+            base = resolveDefaultBaseUrl(provider);
         }
         base = base.replaceAll("/+$", "");
 
@@ -437,7 +498,7 @@ public class AiAssistantService {
             return fromEnv.trim();
         }
 
-        if (isLlama(normalizedProvider)) {
+        if (isLlama(normalizedProvider) || isGroq(normalizedProvider)) {
             return "";
         }
 
@@ -451,10 +512,14 @@ public class AiAssistantService {
         return "";
     }
 
-    private static String normalizeBaseUrl(String baseUrl) {
+    static String resolveDefaultBaseUrl(String provider) {
+        return isGroq(provider) ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1";
+    }
+
+    private static String normalizeBaseUrl(String baseUrl, String provider) {
         String normalized = baseUrl == null ? "" : baseUrl.trim();
         if (normalized.isBlank()) {
-            return "https://api.openai.com/v1";
+            return resolveDefaultBaseUrl(provider);
         }
         return normalized.replaceAll("/+$", "");
     }
@@ -484,12 +549,19 @@ public class AiAssistantService {
         return "llama".equals(normalized) || "meta-llama".equals(normalized) || "meta".equals(normalized);
     }
 
+    private static boolean isGroq(String provider) {
+        return "groq".equals(normalizeProvider(provider));
+    }
+
     private static String resolveProviderApiKeyEnvironmentVariable(String provider) {
         if (isAzureOpenAi(provider)) {
             return "AZURE_OPENAI_API_KEY";
         }
         if (isLlama(provider)) {
             return "LLAMA_API_KEY";
+        }
+        if (isGroq(provider)) {
+            return "GROQ_API_KEY";
         }
         return "OPENAI_API_KEY";
     }

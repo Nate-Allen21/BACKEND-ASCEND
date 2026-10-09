@@ -38,3 +38,8 @@ out/
 
 # Local H2 database files
 data/
+
+# Segredos locais (chaves de IA, credenciais de banco)
+.env
+.env.local
+.env.*.local

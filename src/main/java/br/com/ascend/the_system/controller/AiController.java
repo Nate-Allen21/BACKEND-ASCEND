@@ -27,14 +27,6 @@ public class AiController {
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @RequestBody(required = false) AiChatRequest request
     ) {
-        try {
-            return aiAssistantService.chat(authService.resolveUser(authorizationHeader), request);
-        } catch (Exception exception) {
-            return new AiChatResponse(
-                    "ASCEND AI",
-                    "Não consegui processar sua pergunta agora, mas o sistema está online. Tente novamente em instantes.",
-                    java.util.List.of("Abrir calendário", "Gerar plano", "Tentar novamente")
-            );
-        }
+        return aiAssistantService.chat(authService.resolveUser(authorizationHeader), request);
     }
 }

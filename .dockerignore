@@ -4,5 +4,7 @@ build/
 .idea/
 *.iml
 .env
+.env.*
+.gradle/
 .vscode/
 *.log

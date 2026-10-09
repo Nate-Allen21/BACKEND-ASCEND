@@ -120,6 +120,12 @@ public class User {
         return coins;
     }
 
+    public void spendCoins(int amount) {
+        if (amount <= 0) throw new IllegalArgumentException("Valor da compra invalido.");
+        if (coins < amount) throw new IllegalStateException("Moedas insuficientes.");
+        coins -= amount;
+    }
+
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }

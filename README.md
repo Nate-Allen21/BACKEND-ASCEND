@@ -82,12 +82,11 @@ ASCEND_DB_URL=jdbc:postgresql://YOUR-SUPABASE-POOLER-HOST:6543/postgres?sslmode=
 ASCEND_DB_USER=postgres.YOUR-PROJECT-REF
 ASCEND_DB_PASSWORD=YOUR-SUPABASE-DATABASE-PASSWORD
 ASCEND_CORS_ALLOWED_ORIGINS=https://YOUR-VERCEL-PROJECT.vercel.app,https://*.vercel.app
-ASCEND_AI_PROVIDER=llama
-ASCEND_AI_BASE_URL=https://api.llama.com/compat/v1
-ASCEND_AI_KEY=YOUR-LLAMA-API-KEY
-ASCEND_AI_API_KEY=YOUR-LLAMA-API-KEY
-LLAMA_API_KEY=YOUR-LLAMA-API-KEY
-ASCEND_AI_MODEL=Llama-3.3-8B-Instruct
+ASCEND_AI_PROVIDER=groq
+ASCEND_AI_BASE_URL=https://api.groq.com/openai/v1
+ASCEND_AI_API_KEY=YOUR-GROQ-API-KEY
+GROQ_API_KEY=YOUR-GROQ-API-KEY
+ASCEND_AI_MODEL=openai/gpt-oss-20b
 ASCEND_AI_RESPONSE_MODE=chat-completions
 ```
 
@@ -101,23 +100,36 @@ https://YOUR-RENDER-SERVICE.onrender.com/api/health
 
 It should return `status: UP`.
 
-## Llama AI
+## Groq AI (plano gratuito)
 
-The backend calls AI providers through an OpenAI-compatible chat completions request. For Llama API, configure Render with:
+The backend calls AI providers through an OpenAI-compatible chat completions request, so Groq works with the built-in `groq` provider.
+
+1. Create a free key at https://console.groq.com/keys .
+2. Configure the service (Render, Docker or a local `.env` copied from `.env.example`):
 
 ```text
-ASCEND_AI_PROVIDER=llama
-ASCEND_AI_BASE_URL=https://api.llama.com/compat/v1
-ASCEND_AI_KEY=YOUR-LLAMA-API-KEY
-ASCEND_AI_API_KEY=YOUR-LLAMA-API-KEY
-LLAMA_API_KEY=YOUR-LLAMA-API-KEY
-ASCEND_AI_MODEL=Llama-3.3-8B-Instruct
+ASCEND_AI_PROVIDER=groq
+ASCEND_AI_BASE_URL=https://api.groq.com/openai/v1
+ASCEND_AI_API_KEY=YOUR-GROQ-API-KEY
+ASCEND_AI_MODEL=openai/gpt-oss-20b
 ASCEND_AI_RESPONSE_MODE=chat-completions
 ```
 
-After creating your Llama account, create an API key in the Llama/Meta developer dashboard and copy the exact model id available in your account. If the dashboard shows a different current model, use that value in `ASCEND_AI_MODEL`.
+With `ASCEND_AI_PROVIDER=groq` you can omit `ASCEND_AI_BASE_URL` and just export `GROQ_API_KEY`; the service falls back to `https://api.groq.com/openai/v1` and reads the key from that variable.
 
-If no Llama key is configured, the app keeps working in local fallback mode.
+The default model is `openai/gpt-oss-20b`, verified with the configured Groq account. Availability and free quotas depend on the account.
+
+If the model id is rejected, list the ids actually enabled for your key:
+
+```bash
+curl -H "Authorization: Bearer $GROQ_API_KEY" https://api.groq.com/openai/v1/models
+```
+
+The key stays in the backend only. Never put it in `VITE_*` or `EXPO_PUBLIC_*` variables. If no key is configured, the app keeps working in local fallback mode.
+
+### Other OpenAI-compatible providers
+
+Any provider exposing an OpenAI-compatible `/chat/completions` endpoint works by setting `ASCEND_AI_PROVIDER=openai-compatible` plus `ASCEND_AI_BASE_URL`, `ASCEND_AI_API_KEY` and `ASCEND_AI_MODEL`. `azure-openai` and `llama` providers are also supported.
 
 ## Docker Compose
 
