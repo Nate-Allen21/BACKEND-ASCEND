@@ -4,6 +4,7 @@ import br.com.ascend.the_system.dto.AuthRequest;
 import br.com.ascend.the_system.dto.AuthResponse;
 import br.com.ascend.the_system.dto.RegisterRequest;
 import br.com.ascend.the_system.dto.UserResponse;
+import br.com.ascend.the_system.dto.GoogleAuthRequest;
 import br.com.ascend.the_system.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,11 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@RequestBody AuthRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/google")
+    public AuthResponse google(@RequestBody GoogleAuthRequest request) {
+        return authService.googleLogin(request);
     }
 
     @GetMapping("/me")

@@ -1,0 +1,73 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ASCEND API",
+    "description": "Documentação dos endpoints de health check.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Servidor atual"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Estado da API e configuração do provedor de IA"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Verifica a disponibilidade da API",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "API disponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "UP" },
+                    "application": { "type": "string", "example": "ascend-api" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health/ai": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Consulta o estado da configuração da IA",
+        "operationId": "getAiHealth",
+        "responses": {
+          "200": {
+            "description": "Estado e metadados não secretos da configuração",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "UP" },
+                    "provider": { "type": "string" },
+                    "baseUrl": { "type": "string" },
+                    "model": { "type": "string" },
+                    "responseMode": { "type": "string" },
+                    "apiKeyConfigured": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,6 +6,7 @@ import br.com.ascend.the_system.dto.AuthRequest;
 import br.com.ascend.the_system.dto.AuthResponse;
 import br.com.ascend.the_system.dto.RegisterRequest;
 import br.com.ascend.the_system.dto.UserResponse;
+import br.com.ascend.the_system.dto.GoogleAuthRequest;
 import br.com.ascend.the_system.exception.BadRequestException;
 import br.com.ascend.the_system.exception.ConflictException;
 import br.com.ascend.the_system.exception.UnauthorizedException;
@@ -13,6 +14,11 @@ import br.com.ascend.the_system.repository.UserRepository;
 import br.com.ascend.the_system.repository.UserSessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 
 import java.time.OffsetDateTime;
 import java.util.Locale;
@@ -26,6 +32,9 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
     private final PasswordService passwordService;
+
+    @Value("${ASCEND_GOOGLE_CLIENT_ID:}")
+    private String googleClientId;
 
     public AuthService(
             UserRepository userRepository,
@@ -72,6 +81,49 @@ public class AuthService {
                 .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos."));
 
         return createSession(user);
+    }
+
+    @Transactional
+    public AuthResponse googleLogin(GoogleAuthRequest request) {
+        if (request == null || request.credential() == null || request.credential().isBlank()) {
+            throw new BadRequestException("Não foi possível obter a credencial do Google.");
+        }
+        if (googleClientId == null || googleClientId.isBlank()) {
+            throw new BadRequestException("O login com Google ainda não está configurado no servidor.");
+        }
+
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(java.util.List.of(googleClientId))
+                    .build();
+            GoogleIdToken token = verifier.verify(request.credential());
+            if (token == null) {
+                throw new UnauthorizedException("A credencial do Google é inválida ou expirou.");
+            }
+
+            GoogleIdToken.Payload payload = token.getPayload();
+            String subject = payload.getSubject();
+            String email = normalizeEmail(payload.getEmail());
+            if (subject == null || email == null || !Boolean.TRUE.equals(payload.getEmailVerified())) {
+                throw new UnauthorizedException("A conta Google não pôde ser verificada.");
+            }
+
+            User user = userRepository.findByGoogleSubject(subject)
+                    .orElseGet(() -> userRepository.findByEmail(email).orElse(null));
+            if (user == null) {
+                String name = payload.get("name") instanceof String value && !value.isBlank()
+                        ? value : email.substring(0, email.indexOf('@'));
+                user = new User(name, email, passwordService.hash(UUID.randomUUID().toString()));
+            }
+            user.linkGoogleAccount(subject);
+            userRepository.save(user);
+            return createSession(user);
+        } catch (UnauthorizedException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new UnauthorizedException("Não foi possível validar sua conta Google.");
+        }
     }
 
     @Transactional(readOnly = true)

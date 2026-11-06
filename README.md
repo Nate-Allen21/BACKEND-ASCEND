@@ -198,6 +198,14 @@ Tests use H2 in PostgreSQL compatibility mode, so they stay fully self-contained
 - `GET /api/health` returns API status information
 - `GET /api/player/status` returns player progression and routine data
 
+The health endpoints are documented in the local Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+The OpenAPI document is available at `http://localhost:8080/openapi.json`.
+
 Protected routes require:
 
 ```text
