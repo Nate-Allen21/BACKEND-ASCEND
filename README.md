@@ -51,6 +51,14 @@ If you want to use a managed PostgreSQL instance in Render or Supabase, just poi
 
 Tables are created automatically by Hibernate on startup.
 
+The `users` table stores `avatar` (`male` or `female`) and
+`onboarding_completed`. New accounts start with onboarding incomplete; existing
+rows default to completed so established accounts continue to the dashboard.
+The authenticated `GET /api/auth/me` response includes both values. Save or
+change the current account's avatar with `PUT /api/auth/avatar` and a JSON body
+such as `{"avatar":"female"}`; ownership is determined by the bearer session,
+not by a user ID supplied by the client.
+
 ## Supabase Database
 
 Create a Supabase project and copy the PostgreSQL connection details from **Project Settings > Database**.

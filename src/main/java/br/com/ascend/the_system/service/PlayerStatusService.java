@@ -100,7 +100,8 @@ public class PlayerStatusService {
                             user.getLevel(),
                             user.getRank(),
                             user.getExperience(),
-                            user.getId().equals(currentUser.getId())
+                            user.getId().equals(currentUser.getId()),
+                            user.getAvatar()
                     );
                 })
                 .toList();

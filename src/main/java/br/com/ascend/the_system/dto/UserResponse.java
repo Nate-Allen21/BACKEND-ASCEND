@@ -9,6 +9,8 @@ public record UserResponse(
         int experience,
         int nextLevelExperience,
         int streakDays,
-        int coins
+        int coins,
+        String avatar,
+        boolean onboardingCompleted
 ) {
 }

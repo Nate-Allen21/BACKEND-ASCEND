@@ -39,6 +39,12 @@ public class User {
     @Column(nullable = false, length = 255)
     private String passwordHash;
 
+    @Column(length = 16)
+    private String avatar;
+
+    @Column(name = "onboarding_completed", nullable = false, columnDefinition = "boolean default true")
+    private boolean onboardingCompleted = true;
+
     @Column(name = "player_rank", nullable = false, length = 4)
     private String rank;
 
@@ -70,6 +76,7 @@ public class User {
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
+        this.onboardingCompleted = false;
         this.rank = "E";
         this.level = 1;
         this.experience = 0;
@@ -93,6 +100,19 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public boolean isOnboardingCompleted() {
+        return onboardingCompleted;
+    }
+
+    public void chooseAvatar(String avatar) {
+        this.avatar = avatar;
+        this.onboardingCompleted = true;
     }
 
     public String getGoogleSubject() {

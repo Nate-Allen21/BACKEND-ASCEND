@@ -7,6 +7,7 @@ public record LeaderboardEntryResponse(
         int level,
         String rank,
         int experience,
-        boolean currentUser
+        boolean currentUser,
+        String avatar
 ) {
 }

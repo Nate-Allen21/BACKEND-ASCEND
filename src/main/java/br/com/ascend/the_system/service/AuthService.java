@@ -4,6 +4,7 @@ import br.com.ascend.the_system.domain.User;
 import br.com.ascend.the_system.domain.UserSession;
 import br.com.ascend.the_system.dto.AuthRequest;
 import br.com.ascend.the_system.dto.AuthResponse;
+import br.com.ascend.the_system.dto.AvatarSelectionRequest;
 import br.com.ascend.the_system.dto.RegisterRequest;
 import br.com.ascend.the_system.dto.UserResponse;
 import br.com.ascend.the_system.dto.GoogleAuthRequest;
@@ -132,6 +133,22 @@ public class AuthService {
     }
 
     @Transactional
+    public UserResponse selectAvatar(String authorizationHeader, AvatarSelectionRequest request) {
+        if (request == null || request.avatar() == null) {
+            throw new BadRequestException("Selecione um avatar válido.");
+        }
+
+        String avatar = request.avatar().trim().toLowerCase(Locale.ROOT);
+        if (!avatar.equals("male") && !avatar.equals("female")) {
+            throw new BadRequestException("O avatar selecionado não é válido.");
+        }
+
+        User user = resolveUser(authorizationHeader);
+        user.chooseAvatar(avatar);
+        return toUserResponse(userRepository.save(user));
+    }
+
+    @Transactional
     public void logout(String authorizationHeader) {
         String token = extractToken(authorizationHeader);
         userSessionRepository.deleteByToken(token);
@@ -168,7 +185,9 @@ public class AuthService {
                 user.getExperience(),
                 user.getNextLevelExperience(),
                 user.getStreakDays(),
-                user.getCoins()
+                user.getCoins(),
+                user.getAvatar(),
+                user.isOnboardingCompleted()
         );
     }
 

@@ -6,6 +6,8 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserTest {
 
@@ -19,6 +21,19 @@ class UserTest {
         assertEquals(1, user.getStreakDays());
         assertEquals(1, user.getDisplayedStreakDays(today));
         assertEquals(1, user.getDisplayedStreakDays(today.plusDays(1)));
+    }
+
+    @Test
+    void shouldRequireAvatarSelectionForNewUsersAndCompleteOnboardingAfterSelection() {
+        User user = new User("Kael Hunter", "kael@ascend.local", "hash");
+
+        assertFalse(user.isOnboardingCompleted());
+        assertNull(user.getAvatar());
+
+        user.chooseAvatar("female");
+
+        assertEquals("female", user.getAvatar());
+        assertTrue(user.isOnboardingCompleted());
     }
 
     @Test
