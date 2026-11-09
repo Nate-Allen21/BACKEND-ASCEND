@@ -23,6 +23,9 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/profile")
 public class ProfileController {
+    private static final int MAX_PROFILE_IMAGE_BYTES = 96 * 1024;
+    private static final String PROFILE_IMAGE_PREFIX = "data:image/jpeg;base64,";
+    private static final int MAX_PROFILE_IMAGE_LENGTH = PROFILE_IMAGE_PREFIX.length() + ((MAX_PROFILE_IMAGE_BYTES + 2) / 3) * 4;
     private final AuthService auth;
     private final UserRepository users;
     private final ProfilePostRepository posts;
@@ -36,7 +39,7 @@ public class ProfileController {
     public Map<String,Object> mine(@RequestHeader(value="Authorization",required=false) String header) {
         User u=auth.resolveUser(header);
         Map<String,Object> result=new LinkedHashMap<>();
-        result.put("id",u.getId()); result.put("name",u.getName()); result.put("username",u.getUsername()); result.put("avatar",u.getAvatar());
+        result.put("id",u.getId()); result.put("name",u.getName()); result.put("username",u.getUsername()); result.put("avatar",u.getAvatar()); result.put("profileImage",u.getProfileImage());
         result.put("bio",u.getBio()); result.put("tags",splitTags(u.getProfileTags())); result.put("visibility",u.getProfileVisibility());
         result.put("joinedAt",u.getCreatedAt()); result.put("level",u.getLevel()); result.put("rank",u.getRank());
         result.put("xp",u.getExperience()); result.put("nextLevelXp",u.getNextLevelExperience()); result.put("streakDays",u.getStreakDays());
@@ -59,7 +62,7 @@ public class ProfileController {
         if(!self && (blocked(me,target) || blocked(target,me))) throw new BadRequestException("Este perfil não está disponível.");
         String visibility=target.getProfileVisibility();
         if(!self && (visibility.equals("PRIVATE") || (visibility.equals("FRIENDS")&&!friends))) throw new BadRequestException("Este perfil é visível somente para amigos.");
-        Map<String,Object> result=new LinkedHashMap<>(); result.put("id",target.getId());result.put("name",target.getName());result.put("username",target.getUsername());result.put("avatar",target.getAvatar());result.put("bio",target.getBio());result.put("tags",splitTags(target.getProfileTags()));result.put("level",target.getLevel());result.put("rank",target.getRank());result.put("joinedAt",target.getCreatedAt());
+        Map<String,Object> result=new LinkedHashMap<>(); result.put("id",target.getId());result.put("name",target.getName());result.put("username",target.getUsername());result.put("avatar",target.getAvatar());result.put("profileImage",target.getProfileImage());result.put("bio",target.getBio());result.put("tags",splitTags(target.getProfileTags()));result.put("level",target.getLevel());result.put("rank",target.getRank());result.put("joinedAt",target.getCreatedAt());
         result.put("posts",posts.findTop50ByUserOrderByCreatedAtDesc(target).stream().map(p->postMap(p,me)).toList());result.put("following",connections.existsBySourceAndTargetAndKindAndStatus(me,target,"FOLLOW","ACCEPTED"));result.put("friendStatus",friendStatus(me,target));return result;
     }
 
@@ -106,8 +109,25 @@ public class ProfileController {
         if(request.tags()!=null && (request.tags().size()>5 || tags.size()!=request.tags().size())) throw new BadRequestException("Escolha até 5 tags válidas.");
         String visibility=Optional.ofNullable(request.visibility()).orElse("PUBLIC").toUpperCase(Locale.ROOT);
         if(!Set.of("PUBLIC","PRIVATE","FRIENDS").contains(visibility)) throw new BadRequestException("Visibilidade inválida.");
-        u.updateProfile(request.bio()==null?null:request.bio().trim(),String.join(",",tags),visibility); users.save(u);
+        String profileImage=request.profileImage()==null?null:validateProfileImage(request.profileImage());
+        u.updateProfile(request.bio()==null?null:request.bio().trim(),String.join(",",tags),visibility);
+        if(request.profileImage()!=null) u.updateProfileImage(profileImage);
+        users.save(u);
         return mine(header);
+    }
+
+    private String validateProfileImage(String image) {
+        if(image.isBlank()) return null;
+        if(image.length()>MAX_PROFILE_IMAGE_LENGTH || !image.startsWith(PROFILE_IMAGE_PREFIX)) throw new BadRequestException("A foto deve ser um JPEG com no máximo 96 KB.");
+        byte[] decoded;
+        try {
+            decoded=Base64.getDecoder().decode(image.substring(PROFILE_IMAGE_PREFIX.length()));
+        } catch(IllegalArgumentException exception) {
+            throw new BadRequestException("A imagem enviada é inválida.");
+        }
+        if(decoded.length==0 || decoded.length>MAX_PROFILE_IMAGE_BYTES) throw new BadRequestException("A foto deve ter no máximo 96 KB após a compressão.");
+        if(decoded.length<3 || decoded[0]!=(byte)0xFF || decoded[1]!=(byte)0xD8 || decoded[2]!=(byte)0xFF) throw new BadRequestException("A imagem JPEG enviada é inválida.");
+        return image;
     }
 
     @PostMapping("/posts")

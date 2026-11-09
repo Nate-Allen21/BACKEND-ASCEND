@@ -205,7 +205,7 @@ Tests use H2 in PostgreSQL compatibility mode, so they stay fully self-contained
 - `POST /api/auth/logout` closes the current session
 - `GET /api/health` returns API status information
 - `GET /api/player/status` returns player progression and routine data
-- `GET` and `PUT /api/profile` retrieve and update the authenticated profile
+- `GET` and `PUT /api/profile` retrieve and update the authenticated profile, including a JPEG profile photo capped at 96 KiB
 - `GET /api/profile/discover?q=...` and `GET /api/profile/players/{id}` discover players and view profiles subject to visibility
 - `POST /api/profile/posts`, `DELETE /api/profile/posts/{id}`, and `POST /api/profile/posts/{id}/like` manage profile posts and likes
 - `GET` and `POST /api/profile/posts/{id}/comments` list and add comments

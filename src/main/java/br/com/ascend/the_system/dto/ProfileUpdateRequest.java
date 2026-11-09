@@ -1,2 +1,5 @@
 package br.com.ascend.the_system.dto;
-public record ProfileUpdateRequest(String bio, java.util.List<String> tags, String visibility) {}
+
+import java.util.List;
+
+public record ProfileUpdateRequest(String bio, List<String> tags, String visibility, String profileImage) {}

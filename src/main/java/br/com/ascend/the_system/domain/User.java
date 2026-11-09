@@ -42,6 +42,9 @@ public class User {
     @Column(length = 16)
     private String avatar;
 
+    @Column(name = "profile_image", columnDefinition = "text")
+    private String profileImage;
+
     @Column(length = 500)
     private String bio;
 
@@ -115,6 +118,10 @@ public class User {
         return avatar;
     }
 
+    public String getProfileImage() {
+        return profileImage;
+    }
+
     public String getBio() { return bio; }
     public String getProfileTags() { return profileTags; }
     public String getProfileVisibility() { return profileVisibility; }
@@ -127,6 +134,10 @@ public class User {
         this.bio = bio;
         this.profileTags = tags;
         this.profileVisibility = visibility;
+    }
+
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
     }
 
     public boolean isOnboardingCompleted() {
