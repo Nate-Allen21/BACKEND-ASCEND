@@ -42,6 +42,15 @@ public class User {
     @Column(length = 16)
     private String avatar;
 
+    @Column(length = 500)
+    private String bio;
+
+    @Column(length = 300)
+    private String profileTags;
+
+    @Column(name = "profile_visibility", nullable = false, length = 16, columnDefinition = "varchar(16) default 'PUBLIC'")
+    private String profileVisibility = "PUBLIC";
+
     @Column(name = "onboarding_completed", nullable = false, columnDefinition = "boolean default true")
     private boolean onboardingCompleted = true;
 
@@ -104,6 +113,20 @@ public class User {
 
     public String getAvatar() {
         return avatar;
+    }
+
+    public String getBio() { return bio; }
+    public String getProfileTags() { return profileTags; }
+    public String getProfileVisibility() { return profileVisibility; }
+    public String getUsername() {
+        String base = name == null ? "player" : name.toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+        return (base.isBlank() ? "player" : base) + "-" + id;
+    }
+    public void updateProfile(String bio, String tags, String visibility) {
+        this.bio = bio;
+        this.profileTags = tags;
+        this.profileVisibility = visibility;
     }
 
     public boolean isOnboardingCompleted() {

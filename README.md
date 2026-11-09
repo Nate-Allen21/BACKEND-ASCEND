@@ -205,6 +205,11 @@ Tests use H2 in PostgreSQL compatibility mode, so they stay fully self-contained
 - `POST /api/auth/logout` closes the current session
 - `GET /api/health` returns API status information
 - `GET /api/player/status` returns player progression and routine data
+- `GET` and `PUT /api/profile` retrieve and update the authenticated profile
+- `GET /api/profile/discover?q=...` and `GET /api/profile/players/{id}` discover players and view profiles subject to visibility
+- `POST /api/profile/posts`, `DELETE /api/profile/posts/{id}`, and `POST /api/profile/posts/{id}/like` manage profile posts and likes
+- `GET` and `POST /api/profile/posts/{id}/comments` list and add comments
+- `/api/profile/follow/{id}`, `/api/profile/friends/{id}`, and `/api/profile/block/{id}` manage social connections and blocks
 
 The health endpoints are documented in the local Swagger UI:
 
