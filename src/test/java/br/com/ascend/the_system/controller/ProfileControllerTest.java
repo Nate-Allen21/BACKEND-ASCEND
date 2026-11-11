@@ -8,6 +8,7 @@ import br.com.ascend.the_system.repository.PostLikeRepository;
 import br.com.ascend.the_system.repository.ProfilePostRepository;
 import br.com.ascend.the_system.repository.SocialConnectionRepository;
 import br.com.ascend.the_system.repository.UserRepository;
+import br.com.ascend.the_system.repository.EquippedCosmeticRepository;
 import br.com.ascend.the_system.service.AuthService;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,8 @@ class ProfileControllerTest {
                 mock(ProfilePostRepository.class),
                 mock(SocialConnectionRepository.class),
                 mock(PostLikeRepository.class),
-                mock(PostCommentRepository.class)
+                mock(PostCommentRepository.class),
+                mock(EquippedCosmeticRepository.class)
         );
         String image = "data:image/jpeg;base64," +
                 Base64.getEncoder().encodeToString(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
@@ -67,7 +69,8 @@ class ProfileControllerTest {
                 mock(ProfilePostRepository.class),
                 mock(SocialConnectionRepository.class),
                 mock(PostLikeRepository.class),
-                mock(PostCommentRepository.class)
+                mock(PostCommentRepository.class),
+                mock(EquippedCosmeticRepository.class)
         );
 
         assertThrows(BadRequestException.class, () -> controller.update(

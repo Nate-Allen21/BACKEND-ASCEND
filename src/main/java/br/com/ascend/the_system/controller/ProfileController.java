@@ -14,6 +14,7 @@ import br.com.ascend.the_system.repository.PostLikeRepository;
 import br.com.ascend.the_system.repository.PostCommentRepository;
 import br.com.ascend.the_system.repository.SocialConnectionRepository;
 import br.com.ascend.the_system.repository.UserRepository;
+import br.com.ascend.the_system.repository.EquippedCosmeticRepository;
 import br.com.ascend.the_system.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,8 @@ public class ProfileController {
     private final SocialConnectionRepository connections;
     private final PostLikeRepository likes;
     private final PostCommentRepository comments;
-    public ProfileController(AuthService auth, UserRepository users, ProfilePostRepository posts, SocialConnectionRepository connections, PostLikeRepository likes, PostCommentRepository comments) { this.auth=auth; this.users=users; this.posts=posts; this.connections=connections; this.likes=likes; this.comments=comments; }
+    private final EquippedCosmeticRepository equippedCosmetics;
+    public ProfileController(AuthService auth, UserRepository users, ProfilePostRepository posts, SocialConnectionRepository connections, PostLikeRepository likes, PostCommentRepository comments, EquippedCosmeticRepository equippedCosmetics) { this.auth=auth; this.users=users; this.posts=posts; this.connections=connections; this.likes=likes; this.comments=comments; this.equippedCosmetics=equippedCosmetics; }
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -46,6 +48,7 @@ public class ProfileController {
         result.put("followers",connections.findByTargetAndKindAndStatus(u,"FOLLOW","ACCEPTED").size());
         result.put("following",connections.findBySourceAndKindAndStatus(u,"FOLLOW","ACCEPTED").size());
         result.put("posts",posts.findTop50ByUserOrderByCreatedAtDesc(u).stream().map(p->postMap(p,u)).toList());
+        result.put("equippedCosmetics",equippedCosmetics.findByUser_Id(u.getId()).stream().map(this::equippedCosmeticMap).toList());
         return result;
     }
 
@@ -63,7 +66,7 @@ public class ProfileController {
         String visibility=target.getProfileVisibility();
         if(!self && (visibility.equals("PRIVATE") || (visibility.equals("FRIENDS")&&!friends))) throw new BadRequestException("Este perfil é visível somente para amigos.");
         Map<String,Object> result=new LinkedHashMap<>(); result.put("id",target.getId());result.put("name",target.getName());result.put("username",target.getUsername());result.put("avatar",target.getAvatar());result.put("profileImage",target.getProfileImage());result.put("bio",target.getBio());result.put("tags",splitTags(target.getProfileTags()));result.put("level",target.getLevel());result.put("rank",target.getRank());result.put("joinedAt",target.getCreatedAt());
-        result.put("posts",posts.findTop50ByUserOrderByCreatedAtDesc(target).stream().map(p->postMap(p,me)).toList());result.put("following",connections.existsBySourceAndTargetAndKindAndStatus(me,target,"FOLLOW","ACCEPTED"));result.put("friendStatus",friendStatus(me,target));return result;
+        result.put("posts",posts.findTop50ByUserOrderByCreatedAtDesc(target).stream().map(p->postMap(p,me)).toList());result.put("equippedCosmetics",equippedCosmetics.findByUser_Id(target.getId()).stream().map(this::equippedCosmeticMap).toList());result.put("following",connections.existsBySourceAndTargetAndKindAndStatus(me,target,"FOLLOW","ACCEPTED"));result.put("friendStatus",friendStatus(me,target));return result;
     }
 
     @PostMapping("/follow/{id}") @Transactional
@@ -149,6 +152,7 @@ public class ProfileController {
         posts.delete(p);
     }
     private Map<String,Object> postMap(ProfilePost p,User viewer) { Map<String,Object> m=new LinkedHashMap<>();m.put("id",p.getId());m.put("content",p.getContent());m.put("createdAt",p.getCreatedAt());m.put("likes",likes.countByPost(p));m.put("liked",likes.existsByPostAndUser(p,viewer));m.put("comments",comments.findTop100ByPostOrderByCreatedAtAsc(p).size());return m; }
+    private Map<String,Object> equippedCosmeticMap(br.com.ascend.the_system.domain.EquippedCosmetic cosmetic) { Map<String,Object> m=new LinkedHashMap<>();var item=cosmetic.getItem();m.put("slot",cosmetic.getSlot());m.put("id",item.getId());m.put("name",item.getName());m.put("category",item.getCategory());m.put("rarity",item.getRarity());m.put("previewUrl",item.getPreviewUrl());return m; }
     private Map<String,Object> commentMap(PostComment c){Map<String,Object> m=new LinkedHashMap<>();m.put("id",c.getId());m.put("parentId",c.getParent()==null?null:c.getParent().getId());m.put("content",c.getContent());m.put("createdAt",c.getCreatedAt());m.put("userId",c.getUser().getId());m.put("name",c.getUser().getName());m.put("username",c.getUser().getUsername());return m;}
     private Map<String,Object> userCard(User u){return Map.of("id",u.getId(),"name",u.getName(),"username",u.getUsername(),"avatar",u.getAvatar()==null?"":u.getAvatar());}
     private User other(Long id,User me){if(me.getId().equals(id))throw new BadRequestException("Não é possível criar relação consigo mesmo.");if(blocked(me,users.findById(id).orElseThrow(()->new BadRequestException("Jogador não encontrado."))))throw new BadRequestException("Ação indisponível.");return users.findById(id).orElseThrow(()->new BadRequestException("Jogador não encontrado."));}
