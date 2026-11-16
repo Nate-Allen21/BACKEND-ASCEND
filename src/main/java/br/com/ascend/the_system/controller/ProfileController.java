@@ -108,11 +108,14 @@ public class ProfileController {
     public Map<String,Object> update(@RequestHeader(value="Authorization",required=false) String header, @RequestBody ProfileUpdateRequest request) {
         User u=auth.resolveUser(header);
         if(request==null || (request.bio()!=null && request.bio().length()>500)) throw new BadRequestException("A bio pode ter no máximo 500 caracteres.");
+        String name=request.name()==null?null:request.name().trim();
+        if(request.name()!=null && (name.length()<2 || name.length()>80)) throw new BadRequestException("O nome deve ter entre 2 e 80 caracteres.");
         List<String> tags=request.tags()==null?List.of():request.tags().stream().filter(Objects::nonNull).map(String::trim).filter(s->!s.isBlank()).distinct().limit(5).toList();
         if(request.tags()!=null && (request.tags().size()>5 || tags.size()!=request.tags().size())) throw new BadRequestException("Escolha até 5 tags válidas.");
         String visibility=Optional.ofNullable(request.visibility()).orElse("PUBLIC").toUpperCase(Locale.ROOT);
         if(!Set.of("PUBLIC","PRIVATE","FRIENDS").contains(visibility)) throw new BadRequestException("Visibilidade inválida.");
         String profileImage=request.profileImage()==null?null:validateProfileImage(request.profileImage());
+        if(name!=null) u.updateName(name);
         u.updateProfile(request.bio()==null?null:request.bio().trim(),String.join(",",tags),visibility);
         if(request.profileImage()!=null) u.updateProfileImage(profileImage);
         users.save(u);

@@ -187,6 +187,7 @@ public class AuthService {
                 user.getStreakDays(),
                 user.getCoins(),
                 user.getAvatar(),
+                user.getProfileImage(),
                 user.isOnboardingCompleted()
         );
     }

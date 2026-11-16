@@ -11,6 +11,7 @@ public record UserResponse(
         int streakDays,
         int coins,
         String avatar,
+        String profileImage,
         boolean onboardingCompleted
 ) {
 }

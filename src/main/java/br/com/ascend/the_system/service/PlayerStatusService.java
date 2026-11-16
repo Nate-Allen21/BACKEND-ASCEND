@@ -101,7 +101,8 @@ public class PlayerStatusService {
                             user.getRank(),
                             user.getExperience(),
                             user.getId().equals(currentUser.getId()),
-                            user.getAvatar()
+                            user.getAvatar(),
+                            user.getProfileImage()
                     );
                 })
                 .toList();
