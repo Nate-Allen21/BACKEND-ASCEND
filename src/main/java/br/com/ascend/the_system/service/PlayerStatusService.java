@@ -36,8 +36,9 @@ import java.util.stream.Collectors;
 public class PlayerStatusService {
 
     private static final ZoneId APP_ZONE = ZoneId.of("America/Sao_Paulo");
-    private static final int PENALTY_EXP_LOSS = 50;
-    private static final int PENALTY_COIN_FEE = 200;
+    private static final int BASE_PENALTY_EXP_LOSS = 50;
+    private static final int PENALTY_EXP_INCREASE_PER_RANK = 100;
+    private static final int MAX_PENALTY_COIN_LOSS = 560;
     private static final String ASSISTANT_NAME = "ASCEND AI";
     private static final Comparator<User> LEADERBOARD_COMPARATOR = Comparator
             .comparingInt(User::getLevel).reversed()
@@ -280,11 +281,11 @@ public class PlayerStatusService {
 
         boolean userChanged = false;
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            MissionResponse penaltyMission = withDate(selectSingleMission(buildPenaltyMissions(), date, 53), date.toString());
+            MissionResponse penaltyMission = withDate(selectSingleMission(buildPenaltyMissions(user), date, 53), date.toString());
             boolean completed = missionCompletionRepository.existsByUser_IdAndMissionId(user.getId(), penaltyMission.id());
 
             if (!completed) {
-                user.applyPenalty(PENALTY_EXP_LOSS, PENALTY_COIN_FEE);
+                user.applyPenalty(getPenaltyExperienceLoss(user), getPenaltyCoinLoss(user));
                 userChanged = true;
             }
 
@@ -344,16 +345,49 @@ public class PlayerStatusService {
         if (user.getLevel() >= 30) {
             dailyMissions.add(withDate(selectSingleMission(legendaryMissions, date, 41), dateKey));
         }
-        dailyMissions.add(withDate(selectSingleMission(buildPenaltyMissions(), date, 53), dateKey));
+        dailyMissions.add(withDate(selectSingleMission(buildPenaltyMissions(user), date, 53), dateKey));
         return dailyMissions;
     }
 
-    private List<MissionResponse> buildPenaltyMissions() {
+    private List<MissionResponse> buildPenaltyMissions(User user) {
+        int experiencePenalty = getPenaltyExperienceLoss(user);
+        int coinPenalty = getPenaltyCoinLoss(user);
+        String penaltyDescription = "EXP e taxa de " + coinPenalty + " moedas";
         return List.of(
-                new MissionResponse("penalidade-recuperacao", "penalidade", "Penalty Quest: rotina incompleta", "Obrigatoria - conclua para evitar -50 EXP e taxa de 200 moedas", 25, 0, true),
-                new MissionResponse("penalidade-reinicio", "penalidade", "Penalty Quest: recompor disciplina", "Obrigatoria - execute a tarefa para evitar -50 EXP e taxa de 200 moedas", 30, 0, true),
-                new MissionResponse("penalidade-ajuste", "penalidade", "Penalty Quest: corrigir falha do ciclo", "Obrigatoria - feche a pendencia hoje para evitar -50 EXP e taxa de 200 moedas", 28, 0, true)
+                new MissionResponse("penalidade-recuperacao", "penalidade", "Penalty Quest: rotina incompleta", "Obrigatoria - conclua para evitar -" + experiencePenalty + " " + penaltyDescription, 25, 0, true),
+                new MissionResponse("penalidade-reinicio", "penalidade", "Penalty Quest: recompor disciplina", "Obrigatoria - execute a tarefa para evitar -" + experiencePenalty + " " + penaltyDescription, 30, 0, true),
+                new MissionResponse("penalidade-ajuste", "penalidade", "Penalty Quest: corrigir falha do ciclo", "Obrigatoria - feche a pendencia hoje para evitar -" + experiencePenalty + " " + penaltyDescription, 28, 0, true)
         );
+    }
+
+    private int getPenaltyExperienceLoss(User user) {
+        int rankIndex = getRankIndex(user);
+        return BASE_PENALTY_EXP_LOSS
+                + Math.max(0, rankIndex - 1) * PENALTY_EXP_INCREASE_PER_RANK;
+    }
+
+    private int getPenaltyCoinLoss(User user) {
+        return switch (getRankIndex(user)) {
+            case 0 -> 30;
+            case 1 -> 60;
+            case 2 -> 200;
+            case 3 -> 260;
+            default -> MAX_PENALTY_COIN_LOSS;
+        };
+    }
+
+    private int getRankIndex(User user) {
+        return switch (user.getRank().toUpperCase(Locale.ROOT)) {
+            case "E" -> 0;
+            case "D" -> 1;
+            case "C" -> 2;
+            case "B" -> 3;
+            case "A" -> 4;
+            case "S" -> 5;
+            case "S2" -> 6;
+            case "SSS+" -> 7;
+            default -> 0;
+        };
     }
 
     private List<MissionResponse> selectDailyMissions(List<MissionResponse> pool, LocalDate date, int count, int salt) {
