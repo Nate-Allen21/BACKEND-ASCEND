@@ -12,6 +12,6 @@ public record UserResponse(
         int coins,
         String avatar,
         String profileImage,
-        boolean onboardingCompleted
+        boolean onboardingCompleted, boolean isAscendFounder
 ) {
 }

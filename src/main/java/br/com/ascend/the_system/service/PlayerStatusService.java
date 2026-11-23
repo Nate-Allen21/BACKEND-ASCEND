@@ -113,7 +113,7 @@ public class PlayerStatusService {
                             user.getExperience(),
                             user.getId().equals(currentUser.getId()),
                             user.getAvatar(),
-                            user.getProfileImage(), artwork.get(user.getId())
+                            user.getProfileImage(), artwork.get(user.getId()), java.util.Set.of(2L,8L).contains(user.getId())
                     );
                 })
                 .toList();

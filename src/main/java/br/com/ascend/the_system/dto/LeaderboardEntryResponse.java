@@ -10,6 +10,6 @@ public record LeaderboardEntryResponse(
         boolean currentUser,
         String avatar,
         String profileImage,
-        FrameArtwork frame
+        FrameArtwork frame, boolean isAscendFounder
 ) {
 }

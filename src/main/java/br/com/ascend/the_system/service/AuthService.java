@@ -202,7 +202,7 @@ public class AuthService {
                 user.getCoins(),
                 user.getAvatar(),
                 user.getProfileImage(),
-                user.isOnboardingCompleted()
+                user.isOnboardingCompleted(), Set.of(2L,8L).contains(user.getId())
         );
     }
 

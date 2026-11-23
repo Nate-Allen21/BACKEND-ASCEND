@@ -41,7 +41,7 @@ public class ProfileController {
     public Map<String,Object> mine(@RequestHeader(value="Authorization",required=false) String header) {
         User u=auth.resolveUser(header);
         Map<String,Object> result=new LinkedHashMap<>();
-        result.put("id",u.getId()); result.put("name",u.getName()); result.put("username",u.getUsername()); result.put("avatar",u.getAvatar()); result.put("profileImage",u.getProfileImage());
+        result.put("id",u.getId()); result.put("isAscendFounder",Set.of(2L,8L).contains(u.getId())); result.put("name",u.getName()); result.put("username",u.getUsername()); result.put("avatar",u.getAvatar()); result.put("profileImage",u.getProfileImage());
         result.put("bio",u.getBio()); result.put("tags",splitTags(u.getProfileTags())); result.put("visibility",u.getProfileVisibility());
         result.put("joinedAt",u.getCreatedAt()); result.put("level",u.getLevel()); result.put("rank",u.getRank());
         result.put("xp",u.getExperience()); result.put("nextLevelXp",u.getNextLevelExperience()); result.put("streakDays",u.getStreakDays());
@@ -55,7 +55,7 @@ public class ProfileController {
     @GetMapping("/discover") @Transactional(readOnly=true)
     public List<Map<String,Object>> discover(@RequestHeader(value="Authorization",required=false) String header,@RequestParam(defaultValue="") String q){
         User me=auth.resolveUser(header); if(q.trim().length()<2) return List.of();
-        return users.findTop20ByNameContainingIgnoreCaseOrderByNameAsc(q.trim()).stream().filter(u->!u.getId().equals(me.getId())&&!blocked(me,u)).map(u->{Map<String,Object> m=new LinkedHashMap<>();m.put("id",u.getId());m.put("name",u.getName());m.put("username",u.getUsername());m.put("avatar",u.getAvatar());m.put("following",connections.existsBySourceAndTargetAndKindAndStatus(me,u,"FOLLOW","ACCEPTED"));m.put("friendStatus",friendStatus(me,u));return m;}).toList();
+        return users.findTop20ByNameContainingIgnoreCaseOrderByNameAsc(q.trim()).stream().filter(u->!u.getId().equals(me.getId())&&!blocked(me,u)).map(u->{Map<String,Object> m=new LinkedHashMap<>();m.put("id",u.getId());m.put("isAscendFounder",Set.of(2L,8L).contains(u.getId()));m.put("name",u.getName());m.put("username",u.getUsername());m.put("avatar",u.getAvatar());m.put("following",connections.existsBySourceAndTargetAndKindAndStatus(me,u,"FOLLOW","ACCEPTED"));m.put("friendStatus",friendStatus(me,u));return m;}).toList();
     }
 
     @GetMapping("/players/{id}") @Transactional(readOnly=true)
@@ -65,7 +65,7 @@ public class ProfileController {
         if(!self && (blocked(me,target) || blocked(target,me))) throw new BadRequestException("Este perfil não está disponível.");
         String visibility=target.getProfileVisibility();
         if(!self && (visibility.equals("PRIVATE") || (visibility.equals("FRIENDS")&&!friends))) throw new BadRequestException("Este perfil é visível somente para amigos.");
-        Map<String,Object> result=new LinkedHashMap<>(); result.put("id",target.getId());result.put("name",target.getName());result.put("username",target.getUsername());result.put("avatar",target.getAvatar());result.put("profileImage",target.getProfileImage());result.put("bio",target.getBio());result.put("tags",splitTags(target.getProfileTags()));result.put("level",target.getLevel());result.put("rank",target.getRank());result.put("joinedAt",target.getCreatedAt());
+        Map<String,Object> result=new LinkedHashMap<>(); result.put("id",target.getId());result.put("isAscendFounder",Set.of(2L,8L).contains(target.getId()));result.put("name",target.getName());result.put("username",target.getUsername());result.put("avatar",target.getAvatar());result.put("profileImage",target.getProfileImage());result.put("bio",target.getBio());result.put("tags",splitTags(target.getProfileTags()));result.put("level",target.getLevel());result.put("rank",target.getRank());result.put("joinedAt",target.getCreatedAt());
         result.put("posts",posts.findTop50ByUserOrderByCreatedAtDesc(target).stream().map(p->postMap(p,me)).toList());result.put("equippedCosmetics",equippedCosmetics.findByUser_Id(target.getId()).stream().map(this::equippedCosmeticMap).toList());result.put("following",connections.existsBySourceAndTargetAndKindAndStatus(me,target,"FOLLOW","ACCEPTED"));result.put("friendStatus",friendStatus(me,target));return result;
     }
 
