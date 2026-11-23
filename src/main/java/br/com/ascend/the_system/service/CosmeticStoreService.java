@@ -21,7 +21,7 @@ public class CosmeticStoreService implements ApplicationRunner {
   this.items=items;this.ownership=ownership;this.equipped=equipped;this.purchases=purchases;this.users=users;this.transactions=transactions;
  }
 
- @Override @Transactional public void run(ApplicationArguments args){
+ @Override @Transactional public void run(ApplicationArguments args) throws java.io.IOException {
   seed("frame-nebula","AVATAR_FRAME","EPIC","Nebula Frame","Uma moldura cósmica para destacar seu avatar.",420,true);
   seed("frame-circuit","AVATAR_FRAME","RARE","Circuit Frame","Linhas de circuito em azul para seu avatar.",260,false);
   seed("banner-aurora","PROFILE_BANNER","LEGENDARY","Aurora Banner","Uma aurora luminosa para o cartão do seu perfil.",680,true);
@@ -29,7 +29,24 @@ public class CosmeticStoreService implements ApplicationRunner {
   seed("badge-ascendant","BADGE","LEGENDARY","Ascendant Emblem","Emblema cosmético de raridade lendária.",750,true);
   seed("companion-orbit","COMPANION","MYTHIC","Orbit Companion","Um pequeno assistente holográfico para acompanhar seu perfil.",900,true);
   seed("theme-aurora","THEME","RARE","Aurora Theme","Paleta fria inspirada nas luzes do norte.",360,false);
-  items.findByActiveTrueOrderByFeaturedDescIdAsc();
+  var resolver = new org.springframework.core.io.support.PathMatchingResourcePatternResolver();
+  var mapper = new tools.jackson.databind.ObjectMapper();
+  for (var resource : resolver.getResources("classpath*:cosmetics/*/catalog.json")) {
+   try (var input = resource.getInputStream()) {
+    for (var entry : mapper.readTree(input).path("items")) {
+     String id = entry.path("id").asString();
+     if (items.existsById(id)) continue;
+     String collection = entry.path("collection").asString();
+     String root = "/cosmetics/" + collection.toLowerCase(Locale.ROOT) + "/";
+     var assets = entry.path("assets");
+     var item = new StoreItem(id, entry.path("category").asString(), entry.path("rarity").asString(),
+       entry.path("name").asString(), entry.path("description").asString(),
+       entry.path("suggestedPrice").asInt(), root + assets.path("thumbnail").asString(), true);
+     item.setArtwork(collection, root + assets.path("static").asString(), root + assets.path("animation").asString());
+     items.save(item);
+    }
+   }
+  }
  }
  private void seed(String id,String category,String rarity,String name,String description,int cost,boolean featured){
   if(!items.existsById(id)) items.save(new StoreItem(id,category,rarity,name,description,cost,null,featured));
@@ -40,10 +57,14 @@ public class CosmeticStoreService implements ApplicationRunner {
   Map<String,EquippedCosmetic> slots=new HashMap<>();
   equipped.findByUser_Id(user.getId()).forEach(e->slots.put(e.getSlot(),e));
   Set<String> owned=new HashSet<>();
-  ownership.findByUser_IdOrderByAcquiredAtDesc(user.getId()).forEach(o->owned.add(o.getItem().getId()));
-  List<CosmeticItemResponse> result=items.findByActiveTrueOrderByFeaturedDescIdAsc().stream().map(item->{
+  var possessions=ownership.findByUser_IdOrderByAcquiredAtDesc(user.getId());
+  possessions.forEach(o->owned.add(o.getItem().getId()));
+  Map<String,StoreItem> visible=new LinkedHashMap<>();
+  items.findByActiveTrueOrderByFeaturedDescIdAsc().forEach(i->visible.put(i.getId(),i));
+  possessions.forEach(o->visible.putIfAbsent(o.getItem().getId(),o.getItem()));
+  List<CosmeticItemResponse> result=visible.values().stream().map(item->{
    String slot=slotForCategory(item.getCategory()); EquippedCosmetic active=slots.get(slot);
-   return new CosmeticItemResponse(item.getId(),item.getCategory(),item.getRarity(),item.getName(),item.getDescription(),item.getCost(),item.getPreviewUrl(),item.isFeatured(),owned.contains(item.getId()),active!=null&&active.getItem().getId().equals(item.getId()),slot);
+   return new CosmeticItemResponse(item.getId(),item.getCategory(),item.getRarity(),item.getName(),item.getDescription(),item.getCost(),item.getPreviewUrl(),item.isFeatured(),owned.contains(item.getId()),active!=null&&active.getItem().getId().equals(item.getId()),slot,item.getCollectionName(),item.getStaticAsset(),item.getAnimatedAsset());
   }).toList();
   return new CosmeticStateResponse(user.getCoins(),result);
  }
@@ -64,21 +85,23 @@ public class CosmeticStoreService implements ApplicationRunner {
  @Transactional public CosmeticStateResponse equip(User account,String itemId){
   User user=users.findByIdForUpdate(account.getId()).orElseThrow();
   if(itemId==null||itemId.isBlank()) throw new BadRequestException("Informe um item para equipar.");
-  StoreItem item=items.findById(itemId).filter(StoreItem::isActive).orElseThrow(()->new BadRequestException("Cosmético indisponível."));
+  StoreItem item=items.findById(itemId).orElseThrow(()->new BadRequestException("Cosmético indisponível."));
   if(!ownership.existsByUser_IdAndItem_Id(user.getId(),item.getId())) throw new BadRequestException("Você precisa possuir o cosmético para equipá-lo.");
   String slot=slotForCategory(item.getCategory());
   equipped.deleteByUser_IdAndSlot(user.getId(),slot);
+  equipped.flush();
   equipped.saveAndFlush(new EquippedCosmetic(user,item,slot));
   return state(user);
  }
  @Transactional public CosmeticStateResponse unequip(User account,String slot){
   User user=users.findByIdForUpdate(account.getId()).orElseThrow();
-  if(!Set.of("AVATAR_FRAME","PROFILE_BANNER","TITLE","BADGE","COMPANION","THEME").contains(slot)) throw new BadRequestException("Slot de cosmético inválido.");
+  if(!slotForCategory(slot).equals(slot)) throw new BadRequestException("Slot de cosmético inválido.");
   equipped.deleteByUser_IdAndSlot(user.getId(),slot);
   return state(user);
  }
  private String slotForCategory(String category){
-  if(!Set.of("AVATAR_FRAME","PROFILE_BANNER","PROFILE_EFFECT","NAMEPLATE","TITLE","BADGE","COMPANION","THEME").contains(category)) throw new BadRequestException("Categoria de cosmético inválida.");
+  if ("PROFILE_FRAME".equals(category)) return "AVATAR_FRAME";
+  if(!Set.of("AVATAR_AURA","NAME_EFFECT","CHAT_BUBBLE","CARD_SKIN","PROGRESS_BAR","LOADING_EFFECT","CELEBRATION","BACKGROUND","AVATAR_FRAME","PROFILE_BANNER","PROFILE_EFFECT","NAMEPLATE","TITLE","BADGE","COMPANION","THEME").contains(category)) throw new BadRequestException("Categoria de cosmético inválida.");
   return category;
  }
 }

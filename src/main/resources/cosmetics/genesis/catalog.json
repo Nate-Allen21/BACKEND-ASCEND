@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0",
+  "items": [
+    {
+      "id": "genesis-frame-01",
+      "name": "Genesis Core",
+      "category": "PROFILE_FRAME",
+      "collection": "GENESIS",
+      "rarity": "RARE",
+      "description": "Moldura original de energia e circuitos azuis para avatar.",
+      "suggestedPrice": 500,
+      "animated": true,
+      "assets": {
+        "static": "frames/genesis-frame-01-static.png",
+        "animation": "frames/genesis-frame-01-animated.webp",
+        "thumbnail": "thumbnails/genesis-frame-01.webp"
+      },
+      "assetDetails": {
+        "static": {
+          "path": "frames/genesis-frame-01-static.png",
+          "format": "PNG",
+          "bytes": 119742,
+          "width": 512,
+          "height": 512
+        },
+        "animation": {
+          "path": "frames/genesis-frame-01-animated.webp",
+          "format": "WEBP",
+          "bytes": 1929552,
+          "width": 512,
+          "height": 512
+        },
+        "thumbnail": {
+          "path": "thumbnails/genesis-frame-01.webp",
+          "format": "WEBP",
+          "bytes": 16390,
+          "width": 512,
+          "height": 512
+        }
+      },
+      "width": 512,
+      "height": 512,
+      "durationMs": 2400,
+      "loop": true,
+      "transparent": true
+    },
+    {
+      "id": "genesis-frame-02",
+      "name": "Genesis Circuit Crown",
+      "category": "PROFILE_FRAME",
+      "collection": "GENESIS",
+      "rarity": "EPIC",
+      "description": "Moldura original de energia e circuitos azuis para avatar.",
+      "suggestedPrice": 1000,
+      "animated": true,
+      "assets": {
+        "static": "frames/genesis-frame-02-static.png",
+        "animation": "frames/genesis-frame-02-animated.webp",
+        "thumbnail": "thumbnails/genesis-frame-02.webp"
+      },
+      "assetDetails": {
+        "static": {
+          "path": "frames/genesis-frame-02-static.png",
+          "format": "PNG",
+          "bytes": 135570,
+          "width": 512,
+          "height": 512
+        },
+        "animation": {
+          "path": "frames/genesis-frame-02-animated.webp",
+          "format": "WEBP",
+          "bytes": 2424768,
+          "width": 512,
+          "height": 512
+        },
+        "thumbnail": {
+          "path": "thumbnails/genesis-frame-02.webp",
+          "format": "WEBP",
+          "bytes": 17288,
+          "width": 512,
+          "height": 512
+        }
+      },
+      "width": 512,
+      "height": 512,
+      "durationMs": 2400,
+      "loop": true,
+      "transparent": true
+    },
+    {
+      "id": "genesis-frame-03",
+      "name": "Genesis Quantum Halo",
+      "category": "PROFILE_FRAME",
+      "collection": "GENESIS",
+      "rarity": "LEGENDARY",
+      "description": "Moldura original de energia e circuitos azuis para avatar.",
+      "suggestedPrice": 1800,
+      "animated": true,
+      "assets": {
+        "static": "frames/genesis-frame-03-static.png",
+        "animation": "frames/genesis-frame-03-animated.webp",
+        "thumbnail": "thumbnails/genesis-frame-03.webp"
+      },
+      "assetDetails": {
+        "static": {
+          "path": "frames/genesis-frame-03-static.png",
+          "format": "PNG",
+          "bytes": 128230,
+          "width": 512,
+          "height": 512
+        },
+        "animation": {
+          "path": "frames/genesis-frame-03-animated.webp",
+          "format": "WEBP",
+          "bytes": 2316984,
+          "width": 512,
+          "height": 512
+        },
+        "thumbnail": {
+          "path": "thumbnails/genesis-frame-03.webp",
+          "format": "WEBP",
+          "bytes": 16442,
+          "width": 512,
+          "height": 512
+        }
+      },
+      "width": 512,
+      "height": 512,
+      "durationMs": 2400,
+      "loop": true,
+      "transparent": true
+    }
+  ]
+}

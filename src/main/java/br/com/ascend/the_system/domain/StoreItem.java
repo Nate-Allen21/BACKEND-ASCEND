@@ -28,6 +28,18 @@ public class StoreItem {
     @Column(nullable = false)
     private boolean featured;
 
+    @Column(length=90) private String collectionName;
+    @Column(length=500) private String staticAsset;
+    @Column(length=500) private String animatedAsset;
+    public void setArtwork(String collection, String still, String animation) {
+        collectionName = collection;
+        staticAsset = still;
+        animatedAsset = animation;
+    }
+    public String getCollectionName(){return collectionName;}
+    public String getStaticAsset(){return staticAsset;}
+    public String getAnimatedAsset(){return animatedAsset;}
+    public void configure(int price, boolean enabled){cost=price; active=enabled;}
     protected StoreItem() {}
     public StoreItem(String id, String category, String rarity, String name, String description, int cost, String previewUrl, boolean featured) {
         this.id=id; this.category=category; this.rarity=rarity; this.name=name; this.description=description;

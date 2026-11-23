@@ -9,6 +9,7 @@ public record LeaderboardEntryResponse(
         int experience,
         boolean currentUser,
         String avatar,
-        String profileImage
+        String profileImage,
+        FrameArtwork frame
 ) {
 }

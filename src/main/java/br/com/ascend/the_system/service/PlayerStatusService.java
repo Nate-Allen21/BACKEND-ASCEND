@@ -3,6 +3,7 @@ package br.com.ascend.the_system.service;
 import br.com.ascend.the_system.domain.AttributeType;
 import br.com.ascend.the_system.domain.MissionCompletion;
 import br.com.ascend.the_system.domain.User;
+import br.com.ascend.the_system.domain.VaultTransaction;
 import br.com.ascend.the_system.domain.UserAttribute;
 import br.com.ascend.the_system.dto.AdaptiveMissionResponse;
 import br.com.ascend.the_system.dto.LeaderboardEntryResponse;
@@ -50,16 +51,24 @@ public class PlayerStatusService {
     private final MissionCompletionRepository missionCompletionRepository;
     private final UserAttributeRepository userAttributeRepository;
 
+    private final br.com.ascend.the_system.repository.EquippedCosmeticRepository frames;
+    private final br.com.ascend.the_system.repository.VaultTransactionRepository ledger;
+
     public PlayerStatusService(
+            br.com.ascend.the_system.repository.EquippedCosmeticRepository frames,
+            br.com.ascend.the_system.repository.VaultTransactionRepository ledger,
             UserRepository userRepository,
             MissionCompletionRepository missionCompletionRepository,
             UserAttributeRepository userAttributeRepository
     ) {
+        this.frames=frames;
+        this.ledger=ledger;
         this.userRepository = userRepository;
         this.missionCompletionRepository = missionCompletionRepository;
         this.userAttributeRepository = userAttributeRepository;
     }
 
+    @Transactional
     public PlayerStatusResponse getCurrentStatus(User user) {
         LocalDate today = LocalDate.now(APP_ZONE);
         user = processPendingPenaltyMissions(user, today);
@@ -90,6 +99,7 @@ public class PlayerStatusService {
                 .sorted(LEADERBOARD_COMPARATOR)
                 .toList();
 
+        var artwork=frames.framesFor(sortedUsers.stream().map(User::getId).toList()).stream().collect(Collectors.toMap(br.com.ascend.the_system.dto.FrameArtwork::userId,frame->frame));
         List<LeaderboardEntryResponse> rankedPlayers = java.util.stream.IntStream.range(0, sortedUsers.size())
                 .mapToObj(index -> {
                     User user = sortedUsers.get(index);
@@ -103,7 +113,7 @@ public class PlayerStatusService {
                             user.getExperience(),
                             user.getId().equals(currentUser.getId()),
                             user.getAvatar(),
-                            user.getProfileImage()
+                            user.getProfileImage(), artwork.get(user.getId())
                     );
                 })
                 .toList();
@@ -122,6 +132,7 @@ public class PlayerStatusService {
 
         if (!missionCompletionRepository.existsByUser_IdAndMissionId(user.getId(), missionId)) {
             user.addRewards(mission.experienceReward(), mission.coinReward());
+            if(mission.coinReward()>0) ledger.save(new VaultTransaction(user,VaultTransaction.VaultTransactionType.REWARD,mission.title(),mission.coinReward()));
             user.registerRoutineActivity(today);
             User savedUser = userRepository.save(user);
             increaseStatsForMission(savedUser, mission);
@@ -132,6 +143,7 @@ public class PlayerStatusService {
         return getCurrentStatus(user);
     }
 
+    @Transactional
     public ProductivityPlanResponse generateAdaptivePlan(User user, RoutineProfileRequest profile) {
         LocalDate today = LocalDate.now(APP_ZONE);
         user = processPendingPenaltyMissions(user, today);
@@ -189,6 +201,7 @@ public class PlayerStatusService {
 
         if (!missionCompletionRepository.existsByUser_IdAndMissionId(user.getId(), missionId)) {
             user.addRewards(mission.experienceReward(), mission.coinReward());
+            if(mission.coinReward()>0) ledger.save(new VaultTransaction(user,VaultTransaction.VaultTransactionType.REWARD,mission.title(),mission.coinReward()));
             user.registerRoutineActivity(today);
             User savedUser = userRepository.save(user);
             increaseStatsForAdaptiveMission(savedUser, mission);
@@ -285,7 +298,9 @@ public class PlayerStatusService {
             boolean completed = missionCompletionRepository.existsByUser_IdAndMissionId(user.getId(), penaltyMission.id());
 
             if (!completed) {
+                int previous=user.getCoins();
                 user.applyPenalty(getPenaltyExperienceLoss(user), getPenaltyCoinLoss(user));
+                if(previous>user.getCoins()) ledger.save(new VaultTransaction(user,VaultTransaction.VaultTransactionType.EXPENSE,"Penalidade de "+date,previous-user.getCoins()));
                 userChanged = true;
             }
 

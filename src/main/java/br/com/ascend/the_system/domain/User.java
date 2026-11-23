@@ -30,6 +30,10 @@ public class User {
     @Column(nullable = false, length = 120)
     private String name;
 
+    @jakarta.persistence.Version
+    @Column(nullable=false,columnDefinition="bigint default 0")
+    private long rowVersion;
+
     @Column(nullable = false, unique = true, length = 160)
     private String email;
 
@@ -191,6 +195,12 @@ public class User {
 
     public int getCoins() {
         return coins;
+    }
+
+    public void adjustTestBalance(int delta) {
+        long total=(long)coins+delta;
+        if(total<0 || total>Integer.MAX_VALUE) throw new br.com.ascend.the_system.exception.BadRequestException("Saldo inválido.");
+        coins=(int)total;
     }
 
     public void spendCoins(int amount) {
