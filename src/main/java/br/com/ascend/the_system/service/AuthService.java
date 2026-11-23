@@ -22,6 +22,10 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 
 import java.time.OffsetDateTime;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -36,6 +40,10 @@ public class AuthService {
 
     @Value("${ASCEND_GOOGLE_CLIENT_ID:}")
     private String googleClientId;
+
+    // Ativar após todas as instâncias executarem uma versão capaz de ler hashes.
+    @Value("${ASCEND_HASH_NEW_SESSION_TOKENS:false}")
+    private boolean hashNewSessionTokens;
 
     public AuthService(
             UserRepository userRepository,
@@ -81,6 +89,10 @@ public class AuthService {
                 .filter(foundUser -> passwordService.matches(request.password(), foundUser.getPasswordHash()))
                 .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos."));
 
+        if (passwordService.needsUpgrade(user.getPasswordHash())) {
+            user.updatePasswordHash(passwordService.hash(request.password()));
+            userRepository.save(user);
+        }
         return createSession(user);
     }
 
@@ -151,13 +163,15 @@ public class AuthService {
     @Transactional
     public void logout(String authorizationHeader) {
         String token = extractToken(authorizationHeader);
-        userSessionRepository.deleteByToken(token);
+        userSessionRepository.deleteByToken(hashSessionToken(token));
+        userSessionRepository.deleteByToken(token); // Sessões anteriores à migração.
     }
 
     @Transactional(readOnly = true)
     public User resolveUser(String authorizationHeader) {
         String token = extractToken(authorizationHeader);
-        UserSession session = userSessionRepository.findByToken(token)
+        UserSession session = userSessionRepository.findByToken(hashSessionToken(token))
+                .or(() -> userSessionRepository.findByToken(token))
                 .orElseThrow(() -> new UnauthorizedException("Sessão inválida ou expirada."));
 
         if (session.getExpiresAt().isBefore(OffsetDateTime.now())) {
@@ -169,7 +183,7 @@ public class AuthService {
 
     private AuthResponse createSession(User user) {
         String token = UUID.randomUUID().toString();
-        UserSession session = new UserSession(token, user, OffsetDateTime.now().plusDays(SESSION_DAYS));
+        UserSession session = new UserSession(hashNewSessionTokens ? hashSessionToken(token) : token, user, OffsetDateTime.now().plusDays(SESSION_DAYS));
         userSessionRepository.save(session);
 
         return new AuthResponse(token, toUserResponse(user));
@@ -197,7 +211,21 @@ public class AuthService {
             throw new UnauthorizedException("Sessão inválida ou expirada.");
         }
 
-        return authorizationHeader.substring("Bearer ".length()).trim();
+        String token = authorizationHeader.substring("Bearer ".length()).trim();
+        // Não aceite como credencial o valor do hash gravado no banco.
+        if (token.isEmpty() || token.startsWith("sha256:")) {
+            throw new UnauthorizedException("Sessão inválida ou expirada.");
+        }
+        return token;
+    }
+
+    private String hashSessionToken(String token) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
+            return "sha256:" + HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 indisponível", e);
+        }
     }
 
     private void validateName(String name) {

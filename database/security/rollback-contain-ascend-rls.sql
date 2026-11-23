@@ -1,0 +1,4 @@
+-- SEM ROLLBACK AUTOMATICO: desabilitar RLS ou restaurar grants publicos reabre
+-- a exposicao. Em falha antes do COMMIT, PostgreSQL desfaz toda a transacao.
+-- Depois do COMMIT, mantenha a contencao e restaure acesso somente ao papel
+-- de backend verificado, com privilegios e politicas especificos e testados.

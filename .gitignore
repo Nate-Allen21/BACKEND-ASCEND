@@ -43,3 +43,10 @@ data/
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
+!.env.groq.example
+*.jks
+*.keystore
+*.p12
+*.pfx

@@ -165,6 +165,10 @@ public class User {
         return passwordHash;
     }
 
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public String getRank() {
         return rank;
     }
