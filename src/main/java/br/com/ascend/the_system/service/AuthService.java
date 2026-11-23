@@ -202,7 +202,7 @@ public class AuthService {
                 user.getCoins(),
                 user.getAvatar(),
                 user.getProfileImage(),
-                user.isOnboardingCompleted(), java.util.Set.of(2L,8L).contains(user.getId())
+                user.isOnboardingCompleted(), br.com.ascend.the_system.service.FounderBadgePolicy.isFounder(user.getId())
         );
     }
 
