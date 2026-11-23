@@ -41,7 +41,7 @@ public class AuthService {
     @Value("${ASCEND_GOOGLE_CLIENT_ID:}")
     private String googleClientId;
 
-    // Ativar após todas as instâncias executarem uma versão capaz de ler hashes.
+    // Ativar apÃ³s todas as instÃ¢ncias executarem uma versÃ£o capaz de ler hashes.
     @Value("${ASCEND_HASH_NEW_SESSION_TOKENS:false}")
     private boolean hashNewSessionTokens;
 
@@ -67,7 +67,7 @@ public class AuthService {
 
         String email = normalizeEmail(request.email());
         if (userRepository.existsByEmail(email)) {
-            throw new ConflictException("Este e-mail já está cadastrado.");
+            throw new ConflictException("Este e-mail jÃ¡ estÃ¡ cadastrado.");
         }
 
         User user = new User(request.name().trim(), email, passwordService.hash(request.password()));
@@ -87,7 +87,7 @@ public class AuthService {
 
         User user = userRepository.findByEmail(normalizeEmail(request.email()))
                 .filter(foundUser -> passwordService.matches(request.password(), foundUser.getPasswordHash()))
-                .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos."));
+                .orElseThrow(() -> new UnauthorizedException("E-mail ou senha invÃ¡lidos."));
 
         if (passwordService.needsUpgrade(user.getPasswordHash())) {
             user.updatePasswordHash(passwordService.hash(request.password()));
@@ -99,10 +99,10 @@ public class AuthService {
     @Transactional
     public AuthResponse googleLogin(GoogleAuthRequest request) {
         if (request == null || request.credential() == null || request.credential().isBlank()) {
-            throw new BadRequestException("Não foi possível obter a credencial do Google.");
+            throw new BadRequestException("NÃ£o foi possÃ­vel obter a credencial do Google.");
         }
         if (googleClientId == null || googleClientId.isBlank()) {
-            throw new BadRequestException("O login com Google ainda não está configurado no servidor.");
+            throw new BadRequestException("O login com Google ainda nÃ£o estÃ¡ configurado no servidor.");
         }
 
         try {
@@ -112,14 +112,14 @@ public class AuthService {
                     .build();
             GoogleIdToken token = verifier.verify(request.credential());
             if (token == null) {
-                throw new UnauthorizedException("A credencial do Google é inválida ou expirou.");
+                throw new UnauthorizedException("A credencial do Google Ã© invÃ¡lida ou expirou.");
             }
 
             GoogleIdToken.Payload payload = token.getPayload();
             String subject = payload.getSubject();
             String email = normalizeEmail(payload.getEmail());
             if (subject == null || email == null || !Boolean.TRUE.equals(payload.getEmailVerified())) {
-                throw new UnauthorizedException("A conta Google não pôde ser verificada.");
+                throw new UnauthorizedException("A conta Google nÃ£o pÃ´de ser verificada.");
             }
 
             User user = userRepository.findByGoogleSubject(subject)
@@ -135,7 +135,7 @@ public class AuthService {
         } catch (UnauthorizedException exception) {
             throw exception;
         } catch (Exception exception) {
-            throw new UnauthorizedException("Não foi possível validar sua conta Google.");
+            throw new UnauthorizedException("NÃ£o foi possÃ­vel validar sua conta Google.");
         }
     }
 
@@ -147,12 +147,12 @@ public class AuthService {
     @Transactional
     public UserResponse selectAvatar(String authorizationHeader, AvatarSelectionRequest request) {
         if (request == null || request.avatar() == null) {
-            throw new BadRequestException("Selecione um avatar válido.");
+            throw new BadRequestException("Selecione um avatar vÃ¡lido.");
         }
 
         String avatar = request.avatar().trim().toLowerCase(Locale.ROOT);
         if (!avatar.equals("male") && !avatar.equals("female")) {
-            throw new BadRequestException("O avatar selecionado não é válido.");
+            throw new BadRequestException("O avatar selecionado nÃ£o Ã© vÃ¡lido.");
         }
 
         User user = resolveUser(authorizationHeader);
@@ -164,7 +164,7 @@ public class AuthService {
     public void logout(String authorizationHeader) {
         String token = extractToken(authorizationHeader);
         userSessionRepository.deleteByToken(hashSessionToken(token));
-        userSessionRepository.deleteByToken(token); // Sessões anteriores à migração.
+        userSessionRepository.deleteByToken(token); // SessÃµes anteriores Ã  migraÃ§Ã£o.
     }
 
     @Transactional(readOnly = true)
@@ -172,10 +172,10 @@ public class AuthService {
         String token = extractToken(authorizationHeader);
         UserSession session = userSessionRepository.findByToken(hashSessionToken(token))
                 .or(() -> userSessionRepository.findByToken(token))
-                .orElseThrow(() -> new UnauthorizedException("Sessão inválida ou expirada."));
+                .orElseThrow(() -> new UnauthorizedException("SessÃ£o invÃ¡lida ou expirada."));
 
         if (session.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new UnauthorizedException("Sessão inválida ou expirada.");
+            throw new UnauthorizedException("SessÃ£o invÃ¡lida ou expirada.");
         }
 
         return session.getUser();
@@ -202,19 +202,19 @@ public class AuthService {
                 user.getCoins(),
                 user.getAvatar(),
                 user.getProfileImage(),
-                user.isOnboardingCompleted(), Set.of(2L,8L).contains(user.getId())
+                user.isOnboardingCompleted(), java.util.Set.of(2L,8L).contains(user.getId())
         );
     }
 
     private String extractToken(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedException("Sessão inválida ou expirada.");
+            throw new UnauthorizedException("SessÃ£o invÃ¡lida ou expirada.");
         }
 
         String token = authorizationHeader.substring("Bearer ".length()).trim();
-        // Não aceite como credencial o valor do hash gravado no banco.
+        // NÃ£o aceite como credencial o valor do hash gravado no banco.
         if (token.isEmpty() || token.startsWith("sha256:")) {
-            throw new UnauthorizedException("Sessão inválida ou expirada.");
+            throw new UnauthorizedException("SessÃ£o invÃ¡lida ou expirada.");
         }
         return token;
     }
@@ -224,7 +224,7 @@ public class AuthService {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
             return "sha256:" + HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 indisponível", e);
+            throw new IllegalStateException("SHA-256 indisponÃ­vel", e);
         }
     }
 
@@ -236,7 +236,7 @@ public class AuthService {
 
     private void validateEmail(String email) {
         if (email == null || !email.contains("@") || !email.contains(".")) {
-            throw new BadRequestException("Informe um e-mail válido.");
+            throw new BadRequestException("Informe um e-mail vÃ¡lido.");
         }
     }
 
