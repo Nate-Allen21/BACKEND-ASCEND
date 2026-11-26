@@ -49,7 +49,13 @@ public class AccountDeletionService {
         boolean googleVerified = auth.verifiesRecentGoogleCredential(user, request.googleCredential());
         if (!passwordVerified && !googleVerified) {
             registerFailure(user.getId());
-            throw new UnauthorizedException("Não foi possível confirmar sua senha. Verifique-a e tente novamente.");
+            if (request.googleCredential() != null && !request.googleCredential().isBlank()) {
+                throw new UnauthorizedException("Não foi possível validar a conta Google. Reautentique com a mesma conta vinculada e tente novamente.");
+            }
+            if (request.password() != null && !request.password().isBlank()) {
+                throw new UnauthorizedException("Senha incorreta. Verifique-a e tente novamente.");
+            }
+            throw new UnauthorizedException("Informe sua senha ou reautentique com Google.");
         }
         FAILED_ATTEMPTS.remove(user.getId());
 

@@ -193,13 +193,9 @@ public class AuthService {
             if (token == null || !user.getGoogleSubject().equals(token.getPayload().getSubject())) return false;
             Long issuedAt = token.getPayload().getIssuedAtTimeSeconds();
             if (issuedAt == null) return false;
-            Object authTimeClaim = token.getPayload().get("auth_time");
-            long verifiedAt = authTimeClaim instanceof Number authTime ? authTime.longValue() : issuedAt;
             long now = java.time.Instant.now().getEpochSecond();
             long tokenAge = now - issuedAt;
-            long authenticationAge = now - verifiedAt;
-            return tokenAge >= 0 && tokenAge <= 10 * 60
-                    && authenticationAge >= 0 && authenticationAge <= 10 * 60;
+            return tokenAge >= 0 && tokenAge <= 10 * 60;
         } catch (Exception ignored) {
             return false;
         }

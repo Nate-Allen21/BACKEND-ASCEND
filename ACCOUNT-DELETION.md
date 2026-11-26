@@ -1,6 +1,6 @@
 # ASCEND account deletion and data handling
 
-`DELETE /api/users/me` identifies the account only from the bearer session, requires the current password or a recently issued Google ID token for the linked Google subject, the explicit phrase `EXCLUIR MINHA CONTA`, and the permanent deletion acknowledgement. The password is checked by the existing PBKDF2 verifier. No password, token, or reason is logged. The operation runs in one database transaction; a failed statement rolls back both the deletes and user removal.
+`DELETE /api/users/me` identifies the account only from the bearer session, requires the current password or a Google ID token issued within the last 10 minutes for the linked Google subject, the explicit phrase `EXCLUIR MINHA CONTA`, and the permanent deletion acknowledgement. The password is checked by the existing PBKDF2 verifier. No password, token, or reason is logged. The operation runs in one database transaction; a failed statement rolls back both the deletes and user removal.
 
 ## Data removed
 
