@@ -181,6 +181,30 @@ public class AuthService {
         return session.getUser();
     }
 
+    public boolean verifiesRecentGoogleCredential(User user, String credential) {
+        if (user == null || user.getGoogleSubject() == null || credential == null || credential.isBlank()
+                || googleClientId == null || googleClientId.isBlank()) return false;
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(java.util.List.of(googleClientId))
+                    .build();
+            GoogleIdToken token = verifier.verify(credential);
+            if (token == null || !user.getGoogleSubject().equals(token.getPayload().getSubject())) return false;
+            Long issuedAt = token.getPayload().getIssuedAtTimeSeconds();
+            if (issuedAt == null) return false;
+            Object authTimeClaim = token.getPayload().get("auth_time");
+            long verifiedAt = authTimeClaim instanceof Number authTime ? authTime.longValue() : issuedAt;
+            long now = java.time.Instant.now().getEpochSecond();
+            long tokenAge = now - issuedAt;
+            long authenticationAge = now - verifiedAt;
+            return tokenAge >= 0 && tokenAge <= 10 * 60
+                    && authenticationAge >= 0 && authenticationAge <= 10 * 60;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private AuthResponse createSession(User user) {
         String token = UUID.randomUUID().toString();
         UserSession session = new UserSession(hashNewSessionTokens ? hashSessionToken(token) : token, user, OffsetDateTime.now().plusDays(SESSION_DAYS));
