@@ -85,7 +85,7 @@ public class AuthService {
         validateEmail(request.email());
         validatePasswordPresence(request.password());
 
-        User user = userRepository.findByEmail(normalizeEmail(request.email()))
+        User user = userRepository.findByEmailForUpdate(normalizeEmail(request.email()))
                 .filter(foundUser -> passwordService.matches(request.password(), foundUser.getPasswordHash()))
                 .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos."));
 
@@ -122,8 +122,8 @@ public class AuthService {
                 throw new UnauthorizedException("A conta Google não pôde ser verificada.");
             }
 
-            User user = userRepository.findByGoogleSubject(subject)
-                    .orElseGet(() -> userRepository.findByEmail(email).orElse(null));
+            User user = userRepository.findByGoogleSubjectForUpdate(subject)
+                    .orElseGet(() -> userRepository.findByEmailForUpdate(email).orElse(null));
             if (user == null) {
                 String name = payload.get("name") instanceof String value && !value.isBlank()
                         ? value : email.substring(0, email.indexOf('@'));

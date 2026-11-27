@@ -27,9 +27,16 @@ public class PasswordService {
     private boolean upgradePasswordHashes;
 
     public String hash(String rawPassword) {
+        return hash(rawPassword, upgradePasswordHashes ? CURRENT_ITERATIONS : LEGACY_ITERATIONS);
+    }
+
+    public String hashForRecovery(String rawPassword) {
+        return hash(rawPassword, CURRENT_ITERATIONS);
+    }
+
+    private String hash(String rawPassword, int iterations) {
         byte[] salt = new byte[SALT_LENGTH];
         secureRandom.nextBytes(salt);
-        int iterations = upgradePasswordHashes ? CURRENT_ITERATIONS : LEGACY_ITERATIONS;
         byte[] hash = pbkdf2(rawPassword.toCharArray(), salt, iterations);
 
         return iterations

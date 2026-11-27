@@ -17,6 +17,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByGoogleSubject(String googleSubject);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.email = :email")
+    Optional<User> findByEmailForUpdate(@Param("email") String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.googleSubject = :subject")
+    Optional<User> findByGoogleSubjectForUpdate(@Param("subject") String subject);
+
     java.util.List<User> findTop20ByNameContainingIgnoreCaseOrderByNameAsc(String name);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

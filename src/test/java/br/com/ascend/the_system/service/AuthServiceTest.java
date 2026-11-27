@@ -30,7 +30,7 @@ class AuthServiceTest {
         PasswordService passwords = mock(PasswordService.class);
         AuthService auth = new AuthService(users, sessions, passwords);
         User user = new User("Hunter", "hunter@example.com", "legacy");
-        when(users.findByEmail("hunter@example.com")).thenReturn(Optional.of(user));
+        when(users.findByEmailForUpdate("hunter@example.com")).thenReturn(Optional.of(user));
         when(passwords.matches("correct", "legacy")).thenReturn(true);
         when(passwords.needsUpgrade("legacy")).thenReturn(true);
         when(passwords.hash("correct")).thenReturn("upgraded");
